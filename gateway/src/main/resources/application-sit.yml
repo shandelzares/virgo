@@ -1,0 +1,21 @@
+spring:
+  redis:
+    host: r-2zec92821d7036b4pd.redis.rds.aliyuncs.com
+    password: EDM6cWDcqzpjc3F2
+    database: 20
+  boot:
+    admin:
+      client:
+        url: http://123.56.7.121:8866
+        instance:
+          prefer-ip: true
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+app:
+  redis:
+    prefix: sit-demo
+  sms:
+    type: aliyun

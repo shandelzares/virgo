@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration scan="false" scanPeriod="3600 seconds" debug="false">
+    <!-- logger上下文,LOG_PATH是spring boot内置变量,取值logging.path -->
+    <springProperty scope="context" name="APPLICATION_NAME" source="spring.application.name"/>
+    <springProperty scope="context" name="LOG_PATH" source="logging.path"/>
+    <property name="PATTERN" value="%d [%t-${PID}] %X{TRACE_ID} %-5p %c - [%m]%n"/>
+
+    <appender name="STDOUT-APPENDER" class="ch.qos.logback.core.ConsoleAppender">
+        <param name="target" value="System.out"/>
+        <encoder charset="UTF-8">
+            <pattern>${PATTERN}</pattern>
+        </encoder>
+    </appender>
+
+    <!-- [2,公共Appender] 默认 -->
+    <appender name="DEFAULT-APPENDER" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_PATH}/common-default.log</file>
+        <append>true</append>
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <!-- 日志文件输出的文件名 -->
+            <FileNamePattern>${LOG_PATH}/back/common-default.log.%d{yyyyMMdd}.%i</FileNamePattern>
+            <MaxHistory>60</MaxHistory>
+            <maxFileSize>150MB</maxFileSize>
+            <totalSizeCap>10GB</totalSizeCap>
+        </rollingPolicy>
+        <encoder charset="UTF-8">
+            <pattern>${PATTERN}</pattern>
+        </encoder>
+    </appender>
+
+    <!-- [3,公共Appender] 汇总错误 -->
+    <appender name="ERROR-APPENDER" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_PATH}/common-error.log</file>
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+            <level>ERROR</level>
+        </filter>
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_PATH}/back/common-error.log.%d{yyyyMMdd}.%i</fileNamePattern>
+            <maxHistory>20</maxHistory>
+            <maxFileSize>100MB</maxFileSize>
+            <totalSizeCap>10GB</totalSizeCap>
+        </rollingPolicy>
+        <encoder charset="UTF-8">
+            <pattern>${PATTERN}</pattern>
+        </encoder>
+    </appender>
+
+
+    <logger name="STDOUT" additivity="false">
+        <level value="INFO"/>
+        <appender-ref ref="STDOUT-APPENDER"/>
+    </logger>
+
+    <!-- ===== [框架Logger] ===== -->
+    <!-- [框架Logger] 数据访问层 - mybatis -->
+    <logger name="org.mybatis" additivity="false">
+        <level value="ERROR"/>
+        <appender-ref ref="ERROR-APPENDER"/>
+    </logger>
+
+    <!-- Swagger, Mapping, Pool日志优化 -->
+    <logger name="io.swagger" level="ERROR"/>
+    <logger name="springfox.documentation" level="ERROR"/>
+    <logger name="org.apache.http.impl.conn.PoolingHttpClientConnectionManager" level="ERROR"/>
+    <logger name="org.apache.commons.beanutils" level="WARN"/>
+    <logger name="com.beyond.voyager.number.KeyOperate" level="ERROR"/>
+
+    <!-- ===================================================================== -->
+    <!-- Root logger                                                           -->
+    <!-- ===================================================================== -->
+    <root>
+        <level value="INFO"/>
+        <appender-ref ref="STDOUT-APPENDER"/>
+        <appender-ref ref="DEFAULT-APPENDER"/>
+        <appender-ref ref="ERROR-APPENDER"/>
+    </root>
+
+    <jmxConfigurator/>
+</configuration>

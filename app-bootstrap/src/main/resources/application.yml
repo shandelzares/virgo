@@ -1,0 +1,24 @@
+app:
+  redis:
+    prefix: demo
+  sms:
+    type: aliyun
+  member:
+    avatar-url: http://b-ssl.duitang.com/uploads/item/201511/21/20151121171107_zMZcy.jpeg
+spring:
+  profiles:
+    active: sit
+  jackson:
+    date-format: yyyy-MM-dd HH:mm:ss
+    time-zone: GMT+8
+  mvc:
+    date-format: yyyy-MM-dd HH:mm:ss
+  jpa:
+    open-in-view: false
+  application:
+    name: demo
+server:
+  port: 8001
+logging:
+  file:
+    path: ./logs/

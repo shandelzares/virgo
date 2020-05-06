@@ -1,0 +1,33 @@
+spring:
+  profiles:
+    active: '@env@'
+  application:
+    name: gateway
+  cloud:
+    gateway:
+      discovery:
+        locator:
+          enabled: true
+          lower-case-service-id: true
+      routes:
+        - id: gray
+          uri: http://127.0.0.1:8001
+          predicates:
+            - Path=/gray/api/**
+          filters:
+            - AddRequestHeader=COMPANY_CODE, 10000000
+            - StripPrefix=2
+            - Gray
+        - id: api
+          uri: http://127.0.0.1:8001
+          predicates:
+            - Path=/api/**
+          filters:
+            - AddRequestHeader=COMPANY_CODE, 10000000
+            - StripPrefix=1
+            - Api
+server:
+  port: 8080
+logging:
+  file:
+    path: ./logs/gateway

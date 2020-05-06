@@ -1,0 +1,10 @@
+spring:
+  application:
+    name: springBootAdmin
+server:
+  port: 8866
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"

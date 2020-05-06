@@ -1,0 +1,8 @@
+{
+  "groups": [
+    {
+      "name": "gateway",
+      "type": "com.virgo.common.AppConfig"
+    }
+  ]
+}
