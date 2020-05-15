@@ -13,13 +13,16 @@ import java.time.LocalDateTime;
 @EntityListeners(AuditingEntityListener.class)
 public class ExamPaperRecord {
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    private String examPaperCode;
-    private String personalExamPaperCode;
-    private String memberId;
+    private Long examPaperId;
+    private Long personalExamPaperId;
+    private Long userId;          //用户主键
 
-    private Boolean pass;           //是否通过考试
+    private Boolean pass;        //是否通过考试
     private Integer examScore;   //考试获得最高分数
+    private LocalDateTime startTime;
+    private String answer;
 
     @CreatedDate
     private LocalDateTime createTime;

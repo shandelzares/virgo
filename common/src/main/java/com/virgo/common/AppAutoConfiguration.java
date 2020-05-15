@@ -30,6 +30,7 @@ public class AppAutoConfiguration {
         javaTimeModule.addSerializer(LocalDateTime.class, new LocalDateTimeSerializer());
         javaTimeModule.addDeserializer(LocalDateTime.class, new LocalDateTimeDeserializer());
         objectMapper.registerModule(javaTimeModule);
+        objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         return objectMapper;
     }
 

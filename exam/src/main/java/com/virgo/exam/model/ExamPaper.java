@@ -15,6 +15,7 @@ import java.time.LocalDateTime;
 @EntityListeners(AuditingEntityListener.class)
 public class ExamPaper {
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     private String code;
     private String name;
@@ -31,28 +32,23 @@ public class ExamPaper {
     private Integer lastTestScore;  //上次考试分数
     private Integer passScore;      //及格线
     private Integer avgDifficult;   //平均难度
+    private Integer examTime;       //考试时间 秒
+    private LocalDateTime examStartTime; //考试开始时间
+    private LocalDateTime examEndTime; //考试结束时间
+    private Integer switchScreen;       //切屏次数
+    private Boolean fullScreen;         //是否全屏作答
+
     private Integer difficult;      //设定难度
     private Integer maxExamCount;   //最多考试次数
-    private String title;
-    private String content;
-    /**
-     * json格式
-     * {
-     * "prefix": "A",
-     * "content": "A选项",
-     * "score": 1
-     * }
-     */
-    private String answer;
-    private String correctAnswer;
-    /**
-     *
-     */
+
+    private Integer questionCount;   //最多考试次数
+    private Integer questionScoreTotal;   //最多考试次数
+
+    private Boolean questionDerangement;    //题目乱序
+    private Boolean optionsDerangement;     //选项乱序
+
     private String tags;
-    /**
-     * 解析
-     */
-    private String analyze;
+
     @CreatedBy
     private String creator;//创建人code
     @LastModifiedBy
@@ -63,20 +59,36 @@ public class ExamPaper {
     @Version
     private Long version;
     private String companyCode;
+    private Status status;
+
+    public static enum Status {
+        /**
+         * 草稿
+         */
+        DRAFT,
+        /**
+         * 发布
+         */
+        PUBLISHED,
+        /**
+         * 删除
+         */
+        DELETED
+    }
 
     public static enum Type {
         /**
-         * 单选
+         * 随机
          */
-        SINGLE_SELECT,
+        RANDOM,
         /**
-         * 多选
+         * 固定题目
          */
-        MULTI_SELECT,
+        FIXED,
         /**
-         * 判断
+         * 混合
          */
-        TRUE_FALSE,
+        MIXTURE,
         /**
          * 简答
          */

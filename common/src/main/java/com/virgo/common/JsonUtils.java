@@ -52,7 +52,7 @@ public class JsonUtils implements ApplicationContextAware {
         try {
             return objectMapper.writeValueAsString(map);
         } catch (JsonProcessingException e) {
-            throw new RuntimeException();
+            throw new RuntimeException(e);
         }
     }
 
@@ -65,7 +65,7 @@ public class JsonUtils implements ApplicationContextAware {
         try {
             return objectMapper.writeValueAsString(map);
         } catch (JsonProcessingException e) {
-            throw new RuntimeException();
+            throw new RuntimeException(e);
         }
     }
 
@@ -73,7 +73,7 @@ public class JsonUtils implements ApplicationContextAware {
         try {
             return objectMapper.readValue(data, clazz);
         } catch (IOException e) {
-            throw new RuntimeException();
+            throw new RuntimeException(e);
         }
     }
 
@@ -81,7 +81,7 @@ public class JsonUtils implements ApplicationContextAware {
         try {
             return objectMapper.readValue(data, valueTypeRef);
         } catch (IOException e) {
-            throw new RuntimeException();
+            throw new RuntimeException(e);
         }
     }
 

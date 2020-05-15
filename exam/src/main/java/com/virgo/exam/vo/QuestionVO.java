@@ -1,28 +1,24 @@
-package com.virgo.exam.model;
+package com.virgo.exam.vo;
 
+import com.virgo.exam.model.Question;
 import lombok.Data;
 import org.springframework.data.annotation.CreatedBy;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedBy;
-import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
-import javax.persistence.*;
+import javax.persistence.Version;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Data
-@Entity
-@Table
-@EntityListeners(AuditingEntityListener.class)
-public class Question {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+public class QuestionVO {
     private Long id;
     private String code;
     /**
      * 分类
      */
     private String category;
-    private Type type;
+    private Question.Type type;
     /**
      * 级别（等级、年级等）
      */
@@ -33,14 +29,13 @@ public class Question {
     private String content;
     /**
      * json格式
-     *{
+     * {
      * "prefix": "A",
      * "content": "A选项",
      * "score": 1
      * }
      */
-    private String answer;
-    private String correctAnswer;
+    private List<Answer> answer;
     /**
      *
      */
@@ -60,26 +55,9 @@ public class Question {
     private Long version;
     private String companyCode;
 
-    public static enum Type {
-        /**
-         * 单选
-         */
-        SINGLE_SELECT,
-        /**
-         * 多选
-         */
-        MULTI_SELECT,
-        /**
-         * 判断
-         */
-        TRUE_FALSE,
-        /**
-         * 简答
-         */
-        SHORT_ANSWER,
-        /**
-         * 填空
-         */
-        COMPLETION
+    @Data
+    public static class Answer{
+        private String prefix;
+        private String value;
     }
 }

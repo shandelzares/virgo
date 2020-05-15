@@ -28,7 +28,7 @@ public enum ResultEnum implements ExceptionEnum {
 
     MEMBER_NOT_FOUND(51200,"用户未找到"),
     ACCOUNT_LOCKED(51201,"账号锁定"),
-
+    PASSWORD_INCORRECT(51202,"密码不正确"),
 
 
 

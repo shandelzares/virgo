@@ -13,16 +13,20 @@ import java.time.LocalDateTime;
 @Entity
 @Table
 @EntityListeners(AuditingEntityListener.class)
-public class Question {
+public class ExamPaperQuestion {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     private String code;
+
+    private Long questionId;
+    @ManyToOne
+    private ExamPaper examPaper;
     /**
      * 分类
      */
     private String category;
-    private Type type;
+    private Question.Type type;
     /**
      * 级别（等级、年级等）
      */
@@ -60,26 +64,4 @@ public class Question {
     private Long version;
     private String companyCode;
 
-    public static enum Type {
-        /**
-         * 单选
-         */
-        SINGLE_SELECT,
-        /**
-         * 多选
-         */
-        MULTI_SELECT,
-        /**
-         * 判断
-         */
-        TRUE_FALSE,
-        /**
-         * 简答
-         */
-        SHORT_ANSWER,
-        /**
-         * 填空
-         */
-        COMPLETION
-    }
 }

@@ -15,18 +15,27 @@ import java.time.LocalDateTime;
 @EntityListeners(AuditingEntityListener.class)
 public class PersonalExamPaper {
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    private String examPaperCode;
-    private String memberId;
+    private Long examPaperId;
+    private Long memberId;
 
     private Integer examCount;      //考试次数
     private Boolean pass;           //是否通过考试
     private Integer highestScore;   //考试获得最高分数
     private Integer lowestScore;    //考试获得最高分数
 
+    private Status status;
+    private LocalDateTime startTime;
+
     @CreatedDate
     private LocalDateTime createTime;
     @Version
     private Long version;
     private String companyCode;
+
+    public static enum Status{
+        START,
+        END
+    }
 }
