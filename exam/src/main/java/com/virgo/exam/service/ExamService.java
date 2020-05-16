@@ -31,8 +31,6 @@ public class ExamService {
                 record.setPersonalExamPaperId(examPaper.getId());
                 examPaperRecordRepository.save(record);
             } else if (Objects.equals(examSaveParam.getStatus(), ExamSaveParam.Status.EXAMIING)) {
-
-
                 //考试中途自动提交试卷
             } else if (Objects.equals(examSaveParam.getStatus(), ExamSaveParam.Status.CONTINUE)) {
                 //中断考试后，继续考试
