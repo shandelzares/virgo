@@ -5,6 +5,7 @@ import com.virgo.exam.dto.ExamSaveParam;
 import com.virgo.exam.service.ExamService;
 import io.swagger.annotations.ApiOperation;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.annotation.Resource;
@@ -18,7 +19,7 @@ public class ExamController {
 
     @ApiOperation(value = "考试")
     @PostMapping("v1/exam")
-    public ResultData<?> findPage(@Valid ExamSaveParam examSaveParam) {
+    public ResultData<?> findPage(@RequestBody @Valid ExamSaveParam examSaveParam) {
 
         return ResultData.success(examService.exam(examSaveParam));
     }

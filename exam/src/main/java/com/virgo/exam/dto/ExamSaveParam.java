@@ -1,5 +1,6 @@
 package com.virgo.exam.dto;
 
+import com.virgo.exam.model.Question;
 import lombok.Data;
 
 import java.util.List;
@@ -33,7 +34,8 @@ public class ExamSaveParam {
 
     @Data
     public static class Answer {
-        private String prefix;
-        private String value;
+        private Long questionId;
+        private Question.Type type;
+        private String answer;
     }
 }

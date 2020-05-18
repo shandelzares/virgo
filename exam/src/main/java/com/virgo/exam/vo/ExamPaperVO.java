@@ -1,8 +1,15 @@
 package com.virgo.exam.vo;
 
 import com.virgo.exam.model.ExamPaper;
+import com.virgo.exam.model.Question;
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
+import org.springframework.data.annotation.CreatedBy;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedBy;
 
+import javax.persistence.Version;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -49,4 +56,29 @@ public class ExamPaperVO {
     private String revisor;//更新人code
     private LocalDateTime updateTime;
     private LocalDateTime createTime;
+
+    @Data
+    public static class QuestionVO {
+        private Long id;
+        private Question.Type type;
+        private Integer score;
+        private String content;
+        /**
+         * json格式
+         * {
+         * "prefix": "A",
+         * "content": "A选项",
+         * "score": 1
+         * }
+         */
+        private List<Answer> answer;
+
+        @Data
+        @NoArgsConstructor
+        @AllArgsConstructor
+        public static class Answer {
+            private String prefix;
+            private String value;
+        }
+    }
 }

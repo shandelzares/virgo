@@ -8,11 +8,12 @@ import com.virgo.exam.dto.ExamPaperQueryParam;
 import com.virgo.exam.model.ExamPaper;
 import com.virgo.exam.model.ExamPaperQuestion;
 import com.virgo.exam.model.PersonalExamPaper;
+import com.virgo.exam.model.Question;
 import com.virgo.exam.repository.ExamPaperQuestionRepository;
 import com.virgo.exam.repository.ExamPaperRepository;
 import com.virgo.exam.repository.PersonalExamPaperRecordRepository;
 import com.virgo.exam.vo.ExamPaperVO;
-import com.virgo.exam.vo.QuestionVO;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
@@ -26,8 +27,11 @@ import javax.validation.Valid;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 public class ExamPaperService {
     @Resource
@@ -76,12 +80,34 @@ public class ExamPaperService {
             ExamPaper examPaper = examPaperRepository.findById(personalExamPaper.getExamPaperId()).get();
             List<ExamPaperQuestion> questions = examPaperQuestionRepository.findByExamPaper(examPaper);
             ExamPaperVO vo = BeanUtil.copyProperties(examPaper, ExamPaperVO.class);
-
+            vo.setExamPaperId(personalExamPaper.getExamPaperId());
+            vo.setId(personalExamPaper.getId());
             vo.setQuestions(questions.stream().map(q -> {
-                QuestionVO questionVO = new QuestionVO();
+                ExamPaperVO.QuestionVO questionVO = new ExamPaperVO.QuestionVO();
                 BeanUtil.copyProperties(q, questionVO, "answer");
+
                 questionVO.setAnswer(JsonUtils.parse(q.getAnswer(), new TypeReference<>() {
                 }));
+
+                if (q.getType() == Question.Type.COMPLETION) {
+                    String content = q.getContent();
+
+                    Pattern pattern = Pattern.compile("\\{(.*?)}");
+                    Matcher matcher = pattern.matcher(content);
+                    //循环，字符串中有多少个符合的，就循环多少次
+                    StringBuffer sb = new StringBuffer();
+                    int i = 1;
+                    List<ExamPaperVO.QuestionVO.Answer> answers = new ArrayList<>();
+                    while (matcher.find()) {
+                        matcher.appendReplacement(sb, "__" + i + "__");
+                        answers.add(new ExamPaperVO.QuestionVO.Answer(i + "", null));
+                        i++;
+                    }
+                    matcher.appendTail(sb);
+                    questionVO.setContent(sb.toString());
+                    questionVO.setAnswer(answers);
+                }
+
                 return questionVO;
             }).collect(Collectors.toList()));
             return vo;

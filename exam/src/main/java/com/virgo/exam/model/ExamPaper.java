@@ -40,6 +40,7 @@ public class ExamPaper {
 
     private Integer difficult;      //设定难度
     private Integer maxExamCount;   //最多考试次数
+    private Boolean autoScoring;    //自动阅卷
 
     private Integer questionCount;   //最多考试次数
     private Integer questionScoreTotal;   //最多考试次数

@@ -31,6 +31,13 @@ public enum ResultEnum implements ExceptionEnum {
     PASSWORD_INCORRECT(51202,"密码不正确"),
 
 
+    /**
+     * exam
+     */
+    PERSONAL_EXAM_PAPER_NOT_FOUND(52200,"考试试卷不存在"),
+    PERSONAL_EXAM_PAPER_END(52201,"考试已经结束"),
+    EXAM_RECORD_NOT_FOUND(52202,"考试记录不存在"),
+
 
     /**
      * 系统错误99xx

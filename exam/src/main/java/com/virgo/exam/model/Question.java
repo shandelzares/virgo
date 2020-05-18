@@ -33,7 +33,7 @@ public class Question {
     private String content;
     /**
      * json格式
-     *{
+     * {
      * "prefix": "A",
      * "content": "A选项",
      * "score": 1
@@ -48,6 +48,7 @@ public class Question {
     /**
      * 解析
      */
+
     private String analysis;
     @CreatedBy
     private String creator;//创建人code
@@ -59,6 +60,14 @@ public class Question {
     @Version
     private Long version;
     private String companyCode;
+
+
+    @Data
+    public static class Answer {
+        private String prefix;
+        private String content;
+        private Integer score;
+    }
 
     public static enum Type {
         /**

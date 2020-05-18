@@ -23,6 +23,7 @@ public class ExamPaperRecord {
     private Integer examScore;   //考试获得最高分数
     private LocalDateTime startTime;
     private String answer;
+    private Boolean scoring;
 
     @CreatedDate
     private LocalDateTime createTime;
