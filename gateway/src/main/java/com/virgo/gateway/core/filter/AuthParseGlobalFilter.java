@@ -18,11 +18,12 @@ import java.util.List;
 
 @Slf4j
 @Component
-public class AuthParseFilter implements GatewayFilter, Ordered {
+public class AuthParseGlobalFilter implements GatewayFilter, Ordered {
     @Resource
     private RedisTemplate<String, String> redisTemplate;
     private static final String prefix = "user:token:";
-    private static final String MEMBER_ID = "member_id";
+    private static final String MEMBER_ID = "MEMBER_ID";
+    private static final String USER_ID = "USER_ID";
 
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
@@ -30,11 +31,13 @@ public class AuthParseFilter implements GatewayFilter, Ordered {
         if (CollectionUtils.isEmpty(authorizations)) {
             //todo no auth
         } else {
-            String authorization = authorizations.get(0);
-            String userString = redisTemplate.opsForValue().get(prefix + authorization);
+            String token = authorizations.get(0).substring(7);
+            String userString = redisTemplate.opsForValue().get(prefix + token);
             Member member = JsonUtils.parse(userString, Member.class);
 
-            ServerHttpRequest request = exchange.getRequest().mutate().header(MEMBER_ID, member.getMemberId()).build();
+            ServerHttpRequest request = exchange.getRequest().mutate()
+                    .header(MEMBER_ID, member.getMemberId())
+                    .header(USER_ID, member.getId() + "").build();
             return chain.filter(exchange.mutate().request(request).build());
         }
         return null;

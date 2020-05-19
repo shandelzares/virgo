@@ -14,7 +14,7 @@ import reactor.core.publisher.Mono;
 @Slf4j
 @Component
 @Order
-public class TraceFilter implements GlobalFilter, Ordered {
+public class TraceGlobalFilter implements GlobalFilter, Ordered {
     private static final String TRACE_ID = "TRACE_ID";
     private static final SnowflakeIdWorker SNOWFLAKE_ID_WORKER = new SnowflakeIdWorker(1);
     private static final int order = Integer.MIN_VALUE + 1000;

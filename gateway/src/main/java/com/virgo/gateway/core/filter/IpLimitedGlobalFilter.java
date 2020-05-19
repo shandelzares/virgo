@@ -17,7 +17,7 @@ import java.util.List;
 
 @Slf4j
 @Component
-public class IpLimitedFilter implements GlobalFilter, Ordered {
+public class IpLimitedGlobalFilter implements GlobalFilter, Ordered {
     private List<String> ipLimit = new ArrayList<>();
     @Resource
     private RedisTemplate<String, String> redisTemplate;

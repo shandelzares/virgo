@@ -9,6 +9,7 @@ public class Member {
     private String token;
     private String username;
     private String memberId;
+    private Long id;
     private LocalDateTime loginTime;
     private LocalDateTime updateTime;
 }

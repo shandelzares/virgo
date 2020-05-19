@@ -1,5 +1,6 @@
 package com.virgo.gateway.core.filter;
 
+import com.virgo.common.JsonUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.cloud.gateway.filter.GlobalFilter;
@@ -11,39 +12,60 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
 import org.springframework.web.server.ServerWebExchange;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import reactor.netty.ByteBufFlux;
 
 import javax.annotation.Resource;
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
+/**
+ * 根据request 请求host name查询相对应company code 并放入header
+ * 如  480cbfeb.nat123.fun转换成 1000001放入request header
+ */
 @Slf4j
 @Component
-public class CompanyFilter implements GlobalFilter, Ordered {
+public class CompanyGlobalFilter implements GlobalFilter, Ordered {
     @Resource
     private RedisTemplate<String, String> redisTemplate;
     private static final int order = Integer.MIN_VALUE + 800;
     @Resource
     private JdbcTemplate jdbcTemplate;
+    private static final String FORBIDDEN_FLAG = "-1";
 
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
         String host = exchange.getRequest().getURI().getHost();
-        String companyCode = redisTemplate.opsForValue().get(host);
+        String companyCode = redisTemplate.opsForValue().get(host);//redis查询
+
         if (companyCode == null) {
+            //redis 查询为空，从数据库中查询
             List<String> data = jdbcTemplate.queryForList("SELECT code FROM company WHERE host = '" + host + "'", String.class);
-            companyCode = data.get(0);
             if (CollectionUtils.isEmpty(data)) {
                 log.error("未找到域名相对应的公司 {}", host);
-                exchange.getResponse().setStatusCode(HttpStatus.FORBIDDEN);
-                return exchange.getResponse().setComplete();
+                redisTemplate.opsForValue().set(host, FORBIDDEN_FLAG, 20, TimeUnit.SECONDS);//未找到域名相对应的公司 设置查询flag 防止重复刷库 20s
+                return forbiddenHost(exchange);
             }
+            companyCode = data.get(0);
             redisTemplate.opsForValue().set(host, companyCode, 10, TimeUnit.DAYS);
+        }
+
+        if (Objects.equals(companyCode, FORBIDDEN_FLAG)) {
+            return forbiddenHost(exchange);
+
         }
         ServerHttpRequest request = exchange.getRequest().mutate().header("COMPANY_CODE", companyCode).build();
         return chain.filter(exchange.mutate().request(request).build());
+    }
+
+    private Mono<Void> forbiddenHost(ServerWebExchange exchange) {
+        exchange.getResponse().setStatusCode(HttpStatus.FORBIDDEN);
+        return exchange.getResponse()
+                .writeAndFlushWith(
+                        Flux.just(ByteBufFlux.just(
+                                exchange.getResponse().bufferFactory().wrap(JsonUtils.kvpToJson("status", 40003, "message", "no company code found by host").getBytes()))));
     }
 
     @Override
