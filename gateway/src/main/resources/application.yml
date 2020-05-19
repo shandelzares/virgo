@@ -24,6 +24,15 @@ spring:
           filters:
             - StripPrefix=1
             - Api
+        - id: adminApi
+          uri: http://127.0.0.1:8002
+          predicates:
+            - Path=/admin/api/**
+          filters:
+            - StripPrefix=2
+            - Api
+  jackson:
+    date-format: yyyy-MM-dd HH:mm:ss
 server:
   port: 8000
 logging:

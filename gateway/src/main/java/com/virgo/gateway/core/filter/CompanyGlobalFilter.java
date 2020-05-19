@@ -34,22 +34,23 @@ public class CompanyGlobalFilter implements GlobalFilter, Ordered {
     @Resource
     private JdbcTemplate jdbcTemplate;
     private static final String FORBIDDEN_FLAG = "-1";
+    private static final String REDIS_PREFIX = "host:";
 
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
         String host = exchange.getRequest().getURI().getHost();
-        String companyCode = redisTemplate.opsForValue().get(host);//redis查询
+        String companyCode = redisTemplate.opsForValue().get(REDIS_PREFIX + host);//redis查询
 
         if (companyCode == null) {
             //redis 查询为空，从数据库中查询
             List<String> data = jdbcTemplate.queryForList("SELECT code FROM company WHERE host = '" + host + "'", String.class);
             if (CollectionUtils.isEmpty(data)) {
                 log.error("未找到域名相对应的公司 {}", host);
-                redisTemplate.opsForValue().set(host, FORBIDDEN_FLAG, 20, TimeUnit.SECONDS);//未找到域名相对应的公司 设置查询flag 防止重复刷库 20s
+                redisTemplate.opsForValue().set(REDIS_PREFIX + host, FORBIDDEN_FLAG, 20, TimeUnit.SECONDS);//未找到域名相对应的公司 设置查询flag 防止重复刷库 20s
                 return forbiddenHost(exchange);
             }
             companyCode = data.get(0);
-            redisTemplate.opsForValue().set(host, companyCode, 10, TimeUnit.DAYS);
+            redisTemplate.opsForValue().set(REDIS_PREFIX + host, companyCode, 10, TimeUnit.DAYS);
         }
 
         if (Objects.equals(companyCode, FORBIDDEN_FLAG)) {
@@ -61,7 +62,7 @@ public class CompanyGlobalFilter implements GlobalFilter, Ordered {
     }
 
     private Mono<Void> forbiddenHost(ServerWebExchange exchange) {
-        exchange.getResponse().setStatusCode(HttpStatus.FORBIDDEN);
+        exchange.getResponse().setStatusCode(HttpStatus.OK);//使用子状态码判断
         return exchange.getResponse()
                 .writeAndFlushWith(
                         Flux.just(ByteBufFlux.just(

@@ -8,15 +8,8 @@ import org.springframework.stereotype.Component;
 @Component
 @ConfigurationProperties(prefix = "app")
 public class AppConfig {
-    private Redis redis = new Redis();
     private Sms sms = new Sms();
     private Member member = new Member();
-
-
-    @Data
-    public static class Redis {
-        private String prefix = "";
-    }
 
     @Data
     public static class Member {

@@ -1,8 +1,4 @@
 app:
-  redis:
-    prefix: demo
-  sms:
-    type: aliyun
   member:
     avatar-url: http://b-ssl.duitang.com/uploads/item/201511/21/20151121171107_zMZcy.jpeg
 spring:

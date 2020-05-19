@@ -3,6 +3,7 @@ package com.virgo.exam.service;
 import cn.hutool.core.bean.BeanUtil;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.virgo.common.JsonUtils;
+import com.virgo.common.RequestHolder;
 import com.virgo.common.page.PageResult;
 import com.virgo.exam.dto.ExamPaperQueryParam;
 import com.virgo.exam.model.ExamPaper;
@@ -45,6 +46,10 @@ public class ExamPaperService {
 
         Page<PersonalExamPaper> personalExamPapers = personalExamPaperRecordRepository.findAll((Specification<PersonalExamPaper>) (root, query, criteriaBuilder) -> {
             List<Predicate> predicates = new ArrayList<>();
+
+            if (!Objects.equals(RequestHolder.getCompanyCode(), "1000000")) {//添加公司查询
+                predicates.add(criteriaBuilder.like(root.get("companyCode"), RequestHolder.getCompanyCode()));
+            }
 
             if (!StringUtils.isEmpty(questionQueryParam.getCode())) {
                 predicates.add(criteriaBuilder.like(root.get("code"), questionQueryParam.getCode() + "%"));

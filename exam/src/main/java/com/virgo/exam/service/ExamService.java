@@ -14,8 +14,10 @@ import com.virgo.exam.repository.ExamPaperRepository;
 import com.virgo.exam.repository.PersonalExamPaperRecordRepository;
 import info.debatty.java.stringsimilarity.Jaccard;
 import info.debatty.java.stringsimilarity.interfaces.StringSimilarity;
+import org.springframework.context.ApplicationContext;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import javax.annotation.Resource;
@@ -37,13 +39,15 @@ public class ExamService {
     private ExamPaperQuestionRepository examPaperQuestionRepository;
     @Resource
     private StringRedisTemplate stringRedisTemplate;
+    @Resource
+    private ApplicationContext applicationContext;
     private static final String REDIS_PREFIX = "exam:member";
 
     public Object exam(ExamSaveParam examSaveParam) {
         PersonalExamPaper personalExamPaper = getPersonalExamPaper(examSaveParam);
 
         if (Objects.equals(examSaveParam.getStatus(), ExamSaveParam.Status.START)) {
-            return createRecord(personalExamPaper);
+            return applicationContext.getBean(ExamService.class).createRecord(personalExamPaper);
         }
         if (Objects.equals(examSaveParam.getStatus(), ExamSaveParam.Status.EXAMIING)) {
             examPaperRecordRepository.updateAnswerById(JsonUtils.toJson(examSaveParam.getAnswers()), examSaveParam.getRecordId());
@@ -129,7 +133,8 @@ public class ExamService {
         return null;
     }
 
-    private Object createRecord(PersonalExamPaper personalExamPaper) {
+    @Transactional
+    public Object createRecord(PersonalExamPaper personalExamPaper) {
         ExamPaperRecord record = new ExamPaperRecord();
         record.setUserId(Long.valueOf(RequestHolder.getMemberId()));
         record.setExamPaperId(personalExamPaper.getExamPaperId());

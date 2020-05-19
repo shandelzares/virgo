@@ -18,5 +18,6 @@ public class ExamPaperQueryParam extends AbstractPageRequest {
     private String category;
     private List<ExamPaper.Type> type;
     private String title;
+    private String companyCode;
 
 }

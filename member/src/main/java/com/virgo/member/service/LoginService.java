@@ -46,7 +46,7 @@ public class LoginService {
             case SMS:
                 log.info("短信登陆方式");
                 validateUtils.validate(loginParam, LoginParam.SmsGroup.class);
-                Member member = memberRepository.findByPhoneAndDeletedIsFalse(loginParam.getPhone()).orElseThrow(() -> new BusinessException(ResultEnum.MEMBER_NOT_FOUND));
+                Member member = memberRepository.findByPhoneAndCompanyCodeAndDeletedIsFalse(loginParam.getPhone(), RequestHolder.getCompanyCode()).orElseThrow(() -> new BusinessException(ResultEnum.MEMBER_NOT_FOUND));
                 if (Objects.equals(member.getStatus(), Member.Status.LOCKED))
                     throw new BusinessException(ResultEnum.ACCOUNT_LOCKED);
 
@@ -58,7 +58,7 @@ public class LoginService {
             case WE_CHAT:
                 log.info("微信登陆");
             case PHONE_PASSWORD:
-                member = memberRepository.findByPhoneAndDeletedIsFalse(loginParam.getPhone()).orElseThrow(() -> new BusinessException(ResultEnum.MEMBER_NOT_FOUND));
+                member = memberRepository.findByPhoneAndCompanyCodeAndDeletedIsFalse(loginParam.getPhone(), RequestHolder.getCompanyCode()).orElseThrow(() -> new BusinessException(ResultEnum.MEMBER_NOT_FOUND));
                 if (!passwordEncoder.matches(loginParam.getPassword(), member.getPassword()))
                     throw new BusinessException(ResultEnum.PASSWORD_INCORRECT);
                 token = UUID.randomUUID().toString().replace("-", "");
@@ -72,6 +72,7 @@ public class LoginService {
     private void storeRedis(LocalDateTime now, Member member, String token) {
         MemberRedisDTO redisDTO = new MemberRedisDTO();
         redisDTO.setId(member.getId());
+        redisDTO.setMemberId(member.getMemberId());
         redisDTO.setUsername(member.getUsername());
         redisDTO.setLoginTime(now);
         redisDTO.setToken(token);

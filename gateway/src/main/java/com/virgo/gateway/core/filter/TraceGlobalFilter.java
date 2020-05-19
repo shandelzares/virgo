@@ -13,7 +13,6 @@ import reactor.core.publisher.Mono;
 
 @Slf4j
 @Component
-@Order
 public class TraceGlobalFilter implements GlobalFilter, Ordered {
     private static final String TRACE_ID = "TRACE_ID";
     private static final SnowflakeIdWorker SNOWFLAKE_ID_WORKER = new SnowflakeIdWorker(1);

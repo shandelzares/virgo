@@ -8,6 +8,7 @@ import java.time.LocalDateTime;
 public class MemberRedisDTO {
     private String token;
     private String username;
+    private String memberId;
     private Long id;
     private LocalDateTime loginTime;
     private LocalDateTime updateTime;

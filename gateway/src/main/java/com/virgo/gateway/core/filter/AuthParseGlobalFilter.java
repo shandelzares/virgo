@@ -5,11 +5,14 @@ import com.virgo.gateway.dto.Member;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cloud.gateway.filter.GatewayFilter;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
+import org.springframework.cloud.gateway.filter.GlobalFilter;
 import org.springframework.core.Ordered;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
+import org.springframework.util.StreamUtils;
+import org.springframework.util.StringUtils;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
@@ -18,7 +21,7 @@ import java.util.List;
 
 @Slf4j
 @Component
-public class AuthParseGlobalFilter implements GatewayFilter, Ordered {
+public class AuthParseGlobalFilter implements GlobalFilter, Ordered {
     @Resource
     private RedisTemplate<String, String> redisTemplate;
     private static final String prefix = "user:token:";
@@ -33,6 +36,9 @@ public class AuthParseGlobalFilter implements GatewayFilter, Ordered {
         } else {
             String token = authorizations.get(0).substring(7);
             String userString = redisTemplate.opsForValue().get(prefix + token);
+            if (StringUtils.isEmpty(userString)) {
+                return chain.filter(exchange);
+            }
             Member member = JsonUtils.parse(userString, Member.class);
 
             ServerHttpRequest request = exchange.getRequest().mutate()
@@ -40,11 +46,11 @@ public class AuthParseGlobalFilter implements GatewayFilter, Ordered {
                     .header(USER_ID, member.getId() + "").build();
             return chain.filter(exchange.mutate().request(request).build());
         }
-        return null;
+        return chain.filter(exchange);
     }
 
     @Override
     public int getOrder() {
-        return 0;
+        return Integer.MIN_VALUE + 1100;
     }
 }

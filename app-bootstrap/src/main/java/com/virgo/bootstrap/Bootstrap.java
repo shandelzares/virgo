@@ -1,5 +1,6 @@
 package com.virgo.bootstrap;
 
+import com.virgo.common.redis.RedisConfig;
 import com.virgo.common.swagger.SwaggerConfig;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -15,7 +16,7 @@ import springfox.documentation.swagger2.annotations.EnableSwagger2;
 @SpringBootApplication(scanBasePackages = "com.virgo")
 @EnableJpaRepositories(basePackages = "com.virgo.*.repository")
 @EntityScan(basePackages = "com.virgo.*.model")
-@Import(SwaggerConfig.class)
+@Import({SwaggerConfig.class, RedisConfig.class})
 public class Bootstrap {
     public static void main(String[] args) {
         SpringApplication.run(Bootstrap.class, args);
