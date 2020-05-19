@@ -16,11 +16,9 @@ public class ExamController {
     @Resource
     private ExamService examService;
 
-
     @ApiOperation(value = "考试")
     @PostMapping("v1/exam")
     public ResultData<?> findPage(@RequestBody @Valid ExamSaveParam examSaveParam) {
-
         return ResultData.success(examService.exam(examSaveParam));
     }
 }

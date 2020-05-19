@@ -37,6 +37,7 @@ public class ExamService {
     private ExamPaperQuestionRepository examPaperQuestionRepository;
     @Resource
     private StringRedisTemplate stringRedisTemplate;
+    private static final String REDIS_PREFIX = "exam:member";
 
     public Object exam(ExamSaveParam examSaveParam) {
         PersonalExamPaper personalExamPaper = getPersonalExamPaper(examSaveParam);
@@ -122,7 +123,7 @@ public class ExamService {
             }
             personalExamPaperRecordRepository.save(personalExamPaper);
             examPaperRecordRepository.save(examPaperRecord);
-
+            stringRedisTemplate.delete(REDIS_PREFIX + RequestHolder.getMemberId());
             return examPaperRecord;
         }
         return null;
@@ -135,19 +136,20 @@ public class ExamService {
         record.setStartTime(LocalDateTime.now());
         record.setPass(false);
         record.setPersonalExamPaperId(personalExamPaper.getId());
+        personalExamPaperRecordRepository.incExamCount(personalExamPaper.getId());
         return examPaperRecordRepository.save(record);
     }
 
     private PersonalExamPaper getPersonalExamPaper(ExamSaveParam examSaveParam) {
         PersonalExamPaper personalExamPaper;
         ExamPaper examPaper;
-        String exam = stringRedisTemplate.opsForValue().get(RequestHolder.getMemberId());
+        String exam = stringRedisTemplate.opsForValue().get(REDIS_PREFIX + RequestHolder.getMemberId());
         if (StringUtils.isEmpty(exam)) {
             personalExamPaper = personalExamPaperRecordRepository.findById(examSaveParam.getExamId()).orElseThrow(() -> new BusinessException(ResultEnum.PERSONAL_EXAM_PAPER_NOT_FOUND));
             if (personalExamPaper.getStatus() == PersonalExamPaper.Status.END)
                 throw new BusinessException(ResultEnum.PERSONAL_EXAM_PAPER_END);
             examPaper = examPaperRepository.findById(personalExamPaper.getExamPaperId()).orElseThrow(() -> new BusinessException(ResultEnum.PERSONAL_EXAM_PAPER_NOT_FOUND));
-            stringRedisTemplate.opsForValue().set(RequestHolder.getMemberId() + "examPaper", JsonUtils.toJson(examPaper), examPaper.getExamTime() + 30, TimeUnit.SECONDS);
+            stringRedisTemplate.opsForValue().set(REDIS_PREFIX + RequestHolder.getMemberId(), JsonUtils.toJson(personalExamPaper), examPaper.getExamTime() + 30, TimeUnit.SECONDS);
         } else {
             personalExamPaper = JsonUtils.parse(exam, PersonalExamPaper.class);
             if (!Objects.equals(personalExamPaper.getId(), examSaveParam.getExamId()))
