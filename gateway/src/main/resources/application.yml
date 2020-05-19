@@ -15,7 +15,6 @@ spring:
           predicates:
             - Path=/gray/api/**
           filters:
-            - AddRequestHeader=COMPANY_CODE, 10000000
             - StripPrefix=2
             - Gray
         - id: api
@@ -23,11 +22,10 @@ spring:
           predicates:
             - Path=/api/**
           filters:
-            - AddRequestHeader=COMPANY_CODE, 10000000
             - StripPrefix=1
             - Api
 server:
-  port: 8080
+  port: 8000
 logging:
   file:
     path: ./logs/gateway

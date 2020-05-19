@@ -1,6 +1,6 @@
 spring:
   redis:
-    host: r-2zec92821d7036b4pd.redis.rds.aliyuncs.com
+    host: r-2zec92821d7036b4pd.redis.rds.aliyuncs.comdemo-test@5628e0ad1c559.sh.cdb.myqcloud.com
     password: EDM6cWDcqzpjc3F2
     database: 20
   datasource:

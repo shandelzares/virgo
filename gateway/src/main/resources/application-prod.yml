@@ -3,6 +3,11 @@ spring:
     host: r-2zec92821d7036b4pd.redis.rds.aliyuncs.com
     password: EDM6cWDcqzpjc3F2
     database: 20
+  datasource:
+    url: jdbc:mysql://127.0.0.1:3306/virgo?useSSL=true&serverTimezone=GMT%2B8
+    username: root
+    password: qwe123
+    driver-class-name: com.mysql.cj.jdbc.Driver
   boot:
     admin:
       client:
