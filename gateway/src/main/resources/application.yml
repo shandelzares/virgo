@@ -10,13 +10,6 @@ spring:
           enabled: true
           lower-case-service-id: true
       routes:
-        - id: gray
-          uri: http://127.0.0.1:8001
-          predicates:
-            - Path=/gray/api/**
-          filters:
-            - StripPrefix=2
-            - Gray
         - id: api
           uri: http://127.0.0.1:8001
           predicates:
@@ -28,6 +21,20 @@ spring:
           uri: http://127.0.0.1:8002
           predicates:
             - Path=/admin/api/**
+          filters:
+            - StripPrefix=2
+            - Api
+        - id: devApp
+          uri: http://2308813f.nat123.cc:24079
+          predicates:
+            - Path=/dev/api/**
+          filters:
+            - StripPrefix=2
+            - Api
+        - id: devAdmin
+          uri: http://480cbfeb.nat123.fun:24085
+          predicates:
+            - Path=/devadmin/api/**
           filters:
             - StripPrefix=2
             - Api

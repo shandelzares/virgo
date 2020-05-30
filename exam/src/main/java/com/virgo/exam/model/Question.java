@@ -89,6 +89,14 @@ public class Question {
         /**
          * 填空
          */
-        COMPLETION
+        COMPLETION,
+        /**
+         * 下拉选框
+         */
+        SELECT,
+        /**
+         * 分数
+         */
+        SCORE
     }
 }
