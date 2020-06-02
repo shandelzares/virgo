@@ -59,7 +59,7 @@ public class ExamPaperService {
         return publishExamPaperRepository.findById(id).map(publishExamPaper -> {
             ExamPaper examPaper = examPaperRepository.findById(publishExamPaper.getExamPaperId()).orElseThrow(() -> new BusinessException(ResultEnum.EXAM_RECORD_NOT_FOUND));
             List<ExamPaperQuestion> questions = examPaperQuestionRepository.findByExamPaperId(examPaper.getId());
-            PublishExamPaperVO publishExamPaperVO = BeanUtil.copyProperties(examPaper, PublishExamPaperVO.class);
+            PublishExamPaperVO publishExamPaperVO = BeanUtil.copyProperties(publishExamPaper, PublishExamPaperVO.class);
             BeanUtil.copyProperties(examPaper, publishExamPaperVO, "id", "examPaperId", "status", "startTime", "createTime", "version");
             publishExamPaperVO.setExamPaperId(publishExamPaper.getExamPaperId());
             List<QuestionVO> questionVOS = questions.stream().map(question -> {

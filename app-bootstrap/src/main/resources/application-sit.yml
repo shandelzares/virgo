@@ -31,3 +31,5 @@ app:
     prefix: sit-demo
   sms:
     type: aliyun
+logging.level.org.springframework.data.mongodb: debug
+logging.level.org.springframework.data.mongodb.core.MongoTemplate: debug
