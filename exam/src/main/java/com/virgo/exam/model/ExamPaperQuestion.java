@@ -1,67 +1,68 @@
 package com.virgo.exam.model;
 
 import lombok.Data;
-import org.springframework.data.annotation.CreatedBy;
-import org.springframework.data.annotation.CreatedDate;
-import org.springframework.data.annotation.LastModifiedBy;
-import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.Version;
+import org.springframework.data.mongodb.core.mapping.Document;
 
-import javax.persistence.*;
-import java.time.LocalDateTime;
+import java.util.List;
 
 @Data
-@Entity
-@Table
-@EntityListeners(AuditingEntityListener.class)
+@Document("exam-paper-question")
 public class ExamPaperQuestion {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private String id;
+    /**
+     * 题目id
+     */
+    private String questionId;
+    /**
+     * 试卷id
+     */
+    private String examPaperId;
+    /**
+     * 编码
+     */
     private String code;
-
-    private Long questionId;
-    @ManyToOne
-    private ExamPaper examPaper;
     /**
      * 分类
      */
     private String category;
+    /**
+     * 题目类型
+     */
     private Question.Type type;
     /**
-     * 级别（等级、年级等）
+     * 分数
      */
-    private String level;
     private Integer score;
-    private Integer difficult; //难度 1-10
+    /**
+     * 难度
+     */
+    private Integer difficult; //难度 1-5
+    /**
+     * 标题
+     */
     private String title;
-    private String content;
     /**
-     * json格式
-     *{
-     * "prefix": "A",
-     * "content": "A选项",
-     * "score": 1
-     * }
+     * 题干
      */
-    private String answer;
-    private String correctAnswer;
+    private String stem;
     /**
-     *
+     * 答案
      */
-    private String tags;
+    private List<Question.Answer> answer;
+    /**
+     * 简答题打分标准
+     */
+    private List<Question.ShortAnswerAnalysis> shortAnswerAnalysis;
+
     /**
      * 解析
      */
     private String analysis;
-    @CreatedBy
-    private String creator;//创建人code
-    @LastModifiedBy
-    private String revisor;//更新人code
-    private LocalDateTime updateTime;
-    @CreatedDate
-    private LocalDateTime createTime;
+
     @Version
     private Long version;
-    private String companyCode;
 
 }

@@ -7,7 +7,7 @@ import java.util.List;
 
 @Data
 public class ExamSaveParam {
-    private Long examId;
+    private String examId;
     private Status status;
     private List<Answer> answers;
 

@@ -1,35 +1,30 @@
 package com.virgo.exam.service;
 
 import cn.hutool.core.bean.BeanUtil;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.virgo.common.JsonUtils;
 import com.virgo.common.RequestHolder;
+import com.virgo.common.exception.BusinessException;
+import com.virgo.common.exception.ResultEnum;
 import com.virgo.common.page.PageResult;
 import com.virgo.exam.dto.ExamPaperQueryParam;
 import com.virgo.exam.model.ExamPaper;
 import com.virgo.exam.model.ExamPaperQuestion;
-import com.virgo.exam.model.PersonalExamPaper;
+import com.virgo.exam.model.PublishExamPaper;
 import com.virgo.exam.model.Question;
 import com.virgo.exam.repository.ExamPaperQuestionRepository;
 import com.virgo.exam.repository.ExamPaperRepository;
-import com.virgo.exam.repository.PersonalExamPaperRecordRepository;
-import com.virgo.exam.vo.ExamPaperVO;
+import com.virgo.exam.repository.PublishExamPaperRepository;
+import com.virgo.exam.vo.AnswerVO;
+import com.virgo.exam.vo.PublishExamPaperVO;
+import com.virgo.exam.vo.QuestionVO;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Example;
 import org.springframework.data.domain.Page;
-import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
-import org.springframework.util.CollectionUtils;
-import org.springframework.util.StringUtils;
 
 import javax.annotation.Resource;
-import javax.persistence.criteria.CriteriaBuilder;
-import javax.persistence.criteria.Predicate;
 import javax.validation.Valid;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -40,82 +35,48 @@ public class ExamPaperService {
     @Resource
     private ExamPaperQuestionRepository examPaperQuestionRepository;
     @Resource
-    private PersonalExamPaperRecordRepository personalExamPaperRecordRepository;
+    private PublishExamPaperRepository publishExamPaperRepository;
 
-    public PageResult<ExamPaperVO> findPage(@Valid ExamPaperQueryParam questionQueryParam) {
+    public PageResult<PublishExamPaperVO> findPage(@Valid ExamPaperQueryParam questionQueryParam) {
+        PublishExamPaper query = BeanUtil.copyProperties(questionQueryParam, PublishExamPaper.class);
+        query.setMemberId(RequestHolder.getMemberId());
+        Page<PublishExamPaper> personalExamPapers = publishExamPaperRepository.findAll(Example.of(query), questionQueryParam.pageable());
 
-        Page<PersonalExamPaper> personalExamPapers = personalExamPaperRecordRepository.findAll((Specification<PersonalExamPaper>) (root, query, criteriaBuilder) -> {
-            List<Predicate> predicates = new ArrayList<>();
+        List<ExamPaper> examPapers = examPaperRepository.findByIdIn(personalExamPapers.getContent().stream().map(PublishExamPaper::getExamPaperId).collect(Collectors.toList()));
 
-            if (!Objects.equals(RequestHolder.getCompanyCode(), "1000000")) {//添加公司查询
-                predicates.add(criteriaBuilder.like(root.get("companyCode"), RequestHolder.getCompanyCode()));
-            }
-
-            if (!StringUtils.isEmpty(questionQueryParam.getCode())) {
-                predicates.add(criteriaBuilder.like(root.get("code"), questionQueryParam.getCode() + "%"));
-            }
-
-            if (!StringUtils.isEmpty(questionQueryParam.getTitle())) {
-                predicates.add(criteriaBuilder.like(root.get("title"), questionQueryParam.getTitle() + "%"));
-            }
-            if (!StringUtils.isEmpty(questionQueryParam.getCategory())) {
-                predicates.add(criteriaBuilder.equal(root.get("category"), questionQueryParam.getCategory()));
-            }
-            if (!CollectionUtils.isEmpty(questionQueryParam.getType())) {
-                CriteriaBuilder.In<ExamPaper.Type> in = criteriaBuilder.in(root.get("type"));
-                questionQueryParam.getType().forEach(in::value);
-                predicates.add(criteriaBuilder.and(in));
-            }
-            query.where(predicates.toArray(new Predicate[0])).orderBy();
-            return query.getRestriction();
-        }, questionQueryParam.pageable());
-
-        List<ExamPaper> examPapers = examPaperRepository.findByIdIn(personalExamPapers.getContent().stream().map(PersonalExamPaper::getExamPaperId).collect(Collectors.toList()));
-
-        return new PageResult<>(personalExamPapers.getTotalElements(), examPapers.stream().map(paper -> {
-            ExamPaperVO vo = BeanUtil.copyProperties(paper, ExamPaperVO.class);
-            vo.setExamPaperId(vo.getId());
-            vo.setId(personalExamPapers.getContent().stream().filter(it -> Objects.equals(it.getExamPaperId(), paper.getId())).findAny().map(PersonalExamPaper::getId).orElse(null));
+        return new PageResult<>(personalExamPapers.getTotalElements(), personalExamPapers.stream().map(publishExamPaper -> {
+            PublishExamPaperVO vo = BeanUtil.copyProperties(publishExamPaper, PublishExamPaperVO.class);
+            examPapers.forEach(examPaper -> {
+                if (Objects.equals(publishExamPaper.getExamPaperId(), examPaper.getId())) {
+                    BeanUtil.copyProperties(examPaper, vo, "id", "examPaperId", "status", "startTime", "createTime", "version");
+                }
+            });
             return vo;
         }).collect(Collectors.toList()));
     }
 
-    public ExamPaperVO findById(Long id) {
-        return personalExamPaperRecordRepository.findById(id).map(personalExamPaper -> {
-            ExamPaper examPaper = examPaperRepository.findById(personalExamPaper.getExamPaperId()).get();
-            List<ExamPaperQuestion> questions = examPaperQuestionRepository.findByExamPaper(examPaper);
-            ExamPaperVO vo = BeanUtil.copyProperties(examPaper, ExamPaperVO.class);
-            vo.setExamPaperId(personalExamPaper.getExamPaperId());
-            vo.setId(personalExamPaper.getId());
-            vo.setQuestions(questions.stream().map(q -> {
-                ExamPaperVO.QuestionVO questionVO = new ExamPaperVO.QuestionVO();
-                BeanUtil.copyProperties(q, questionVO, "answer");
-
-                questionVO.setAnswer(JsonUtils.parse(q.getAnswer(), new TypeReference<>() {
-                }));
-
-                if (q.getType() == Question.Type.COMPLETION) {
-                    String content = q.getContent();
-
-                    Pattern pattern = Pattern.compile("\\{(.*?)}");
-                    Matcher matcher = pattern.matcher(content);
-                    //循环，字符串中有多少个符合的，就循环多少次
-                    StringBuffer sb = new StringBuffer();
-                    int i = 1;
-                    List<ExamPaperVO.QuestionVO.Answer> answers = new ArrayList<>();
-                    while (matcher.find()) {
-                        matcher.appendReplacement(sb, "__" + i + "__");
-                        answers.add(new ExamPaperVO.QuestionVO.Answer(i + "", null));
-                        i++;
-                    }
-                    matcher.appendTail(sb);
-                    questionVO.setContent(sb.toString());
-                    questionVO.setAnswer(answers);
-                }
-
+    public PublishExamPaperVO findById(String id) {
+        return publishExamPaperRepository.findById(id).map(publishExamPaper -> {
+            ExamPaper examPaper = examPaperRepository.findById(publishExamPaper.getExamPaperId()).orElseThrow(() -> new BusinessException(ResultEnum.EXAM_RECORD_NOT_FOUND));
+            List<ExamPaperQuestion> questions = examPaperQuestionRepository.findByExamPaperId(examPaper.getId());
+            PublishExamPaperVO publishExamPaperVO = BeanUtil.copyProperties(examPaper, PublishExamPaperVO.class);
+            BeanUtil.copyProperties(examPaper, publishExamPaperVO, "id", "examPaperId", "status", "startTime", "createTime", "version");
+            publishExamPaperVO.setExamPaperId(publishExamPaper.getExamPaperId());
+            List<QuestionVO> questionVOS = questions.stream().map(question -> {
+                List<Question.Answer> answers = question.getAnswer();
+                List<AnswerVO> answerVOS = answers.stream().map(answer -> {
+                    AnswerVO answerVO = BeanUtil.copyProperties(answer, AnswerVO.class);
+                    answerVO.setIsCorrect(null);
+                    return answerVO;
+                }).collect(Collectors.toList());
+                QuestionVO questionVO = BeanUtil.copyProperties(question, QuestionVO.class);
+                questionVO.setAnswer(answerVOS);
+                questionVO.setAnalysis(null);
+                questionVO.setShortAnswerAnalysis(null);
                 return questionVO;
-            }).collect(Collectors.toList()));
-            return vo;
+            }).collect(Collectors.toList());
+            publishExamPaperVO.setQuestions(questionVOS);
+            return publishExamPaperVO;
         }).orElse(null);
     }
 }

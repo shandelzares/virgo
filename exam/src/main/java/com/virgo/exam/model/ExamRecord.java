@@ -2,21 +2,19 @@ package com.virgo.exam.model;
 
 import lombok.Data;
 import org.springframework.data.annotation.CreatedDate;
-import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.Version;
+import org.springframework.data.mongodb.core.mapping.Document;
 
-import javax.persistence.*;
 import java.time.LocalDateTime;
 
 @Data
-@Entity
-@Table
-@EntityListeners(AuditingEntityListener.class)
-public class ExamPaperRecord {
+@Document("exam-record")
+public class ExamRecord {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-    private Long examPaperId;
-    private Long personalExamPaperId;
+    private String id;
+    private String examPaperId;
+    private String publishExamPaperId;
     private Long userId;          //用户主键
 
     private Boolean pass;        //是否通过考试

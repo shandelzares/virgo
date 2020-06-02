@@ -1,36 +1,24 @@
 package com.virgo.exam.service;
 
-import cn.hutool.core.util.BooleanUtil;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.virgo.common.JsonUtils;
-import com.virgo.common.RequestHolder;
 import com.virgo.common.exception.BusinessException;
 import com.virgo.common.exception.ResultEnum;
 import com.virgo.exam.dto.ExamSaveParam;
-import com.virgo.exam.model.*;
+import com.virgo.exam.model.PublishExamPaper;
 import com.virgo.exam.repository.ExamPaperQuestionRepository;
 import com.virgo.exam.repository.ExamPaperRecordRepository;
 import com.virgo.exam.repository.ExamPaperRepository;
-import com.virgo.exam.repository.PersonalExamPaperRecordRepository;
-import info.debatty.java.stringsimilarity.Jaccard;
-import info.debatty.java.stringsimilarity.interfaces.StringSimilarity;
+import com.virgo.exam.repository.PublishExamPaperRepository;
 import org.springframework.context.ApplicationContext;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.StringUtils;
 
 import javax.annotation.Resource;
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Objects;
-import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
 @Service
 public class ExamService {
     @Resource
-    private PersonalExamPaperRecordRepository personalExamPaperRecordRepository;
+    private PublishExamPaperRepository publishExamPaperRepository;
     @Resource
     private ExamPaperRecordRepository examPaperRecordRepository;
     @Resource
@@ -44,122 +32,133 @@ public class ExamService {
     private static final String REDIS_PREFIX = "exam:member";
 
     public Object exam(ExamSaveParam examSaveParam) {
-        PersonalExamPaper personalExamPaper = getPersonalExamPaper(examSaveParam);
-
-        if (Objects.equals(examSaveParam.getStatus(), ExamSaveParam.Status.START)) {
-            return applicationContext.getBean(ExamService.class).createRecord(personalExamPaper);
-        }
-        if (Objects.equals(examSaveParam.getStatus(), ExamSaveParam.Status.EXAMIING)) {
-            examPaperRecordRepository.updateAnswerById(JsonUtils.toJson(examSaveParam.getAnswers()), examSaveParam.getRecordId());
-            return null;
-        }
-        if (Objects.equals(examSaveParam.getStatus(), ExamSaveParam.Status.CONTINUE)) {
-            //todo 可间断考试
-            return null;
-        }
-        if (Objects.equals(examSaveParam.getStatus(), ExamSaveParam.Status.SUBMIT)) {
-            ExamPaperRecord examPaperRecord = examPaperRecordRepository.findById(examSaveParam.getRecordId()).orElseThrow(() -> new BusinessException(ResultEnum.EXAM_RECORD_NOT_FOUND));
-
-            examPaperRecord.setAnswer(JsonUtils.toJson(examSaveParam.getAnswers()));
-            ExamPaper examPaper = examPaperRepository.findById(personalExamPaper.getExamPaperId()).orElseThrow(() -> new BusinessException(ResultEnum.PERSONAL_EXAM_PAPER_NOT_FOUND));
-
-            List<ExamPaperQuestion> questions = examPaperQuestionRepository.findByExamPaper(examPaper);
-
-            int score = questions.stream().mapToInt(question -> examSaveParam.getAnswers().stream().filter(re -> Objects.equals(re.getQuestionId(), question.getId()))
-                    .findFirst().map(it -> {
-                        if (question.getType() == Question.Type.SINGLE_SELECT || question.getType() == Question.Type.TRUE_FALSE) {
-                            Object correctAnswer = JsonUtils.parse(question.getCorrectAnswer(), List.class).get(0);
-                            return Objects.equals(it.getAnswer(), correctAnswer.toString()) ? question.getScore() : 0;
-                        }
-                        if (question.getType() == Question.Type.MULTI_SELECT) {
-
-
-                            List<Question.Answer> answersss = JsonUtils.parse(question.getAnswer(), new TypeReference<>() {
-                            });
-
-                            List<String> cAnswer = JsonUtils.parse(question.getCorrectAnswer(), new TypeReference<>() {
-                            });
-                            List<String> userAns = JsonUtils.parse(it.getAnswer(), new TypeReference<>() {
-                            });
-
-
-                            List<Question.Answer> isTrue = answersss.stream()
-                                    .filter(answer -> cAnswer.contains(answer.getPrefix()))
-                                    .filter(c -> userAns.contains(c.getPrefix()))
-                                    .collect(Collectors.toList());
-
-                            return isTrue.stream().mapToInt(i -> i.getScore() == null ? 0 : i.getScore()).sum();
-                        }
-                        if (question.getType() == Question.Type.COMPLETION) {
-//                                        List<String> userAns = JsonUtils.parse(it.getAnswer(), new TypeReference<>() {
-//                                        });
-//                                        List<String> cAnswer = JsonUtils.parse(question.getCorrectAnswer(), new TypeReference<>() {
-//                                        });
-//                                        if (userAns.size() != cAnswer.size())
-//                                            return 0;
+//        PublishExamPaper publishExamPaper = getPersonalExamPaper(examSaveParam);
 //
-                            return Objects.equals(it.getAnswer(), question.getCorrectAnswer()) ? question.getScore() : 0;
-                        }
-
-                        if (question.getType() == Question.Type.SHORT_ANSWER) {
-                            StringSimilarity stringSimilarity = new Jaccard();
-                            if (StringUtils.isEmpty(it.getAnswer())) return 0;
-                            double result = stringSimilarity.similarity(question.getCorrectAnswer(), it.getAnswer());
-                            return (int) result * question.getScore();
-                        }
-                        return 0;
-                    }).orElse(0)).sum();
-            examPaperRecord.setExamScore(score);
-
-            //如果设置最大考试次数且 当前考试次数大于等于最大考试次数则考试结束
-            if (examPaper.getMaxExamCount() > 0 && personalExamPaper.getExamCount() + 1 >= examPaper.getMaxExamCount())
-                personalExamPaper.setStatus(PersonalExamPaper.Status.END);
-            personalExamPaper.setExamCount(personalExamPaper.getExamCount() + 1);
-            //设置考试最高分数
-            if (personalExamPaper.getHighestScore() == null || examPaperRecord.getExamScore() > personalExamPaper.getHighestScore())
-                personalExamPaper.setHighestScore(examPaperRecord.getExamScore());
-            //设置考试最低分数
-            if (personalExamPaper.getLowestScore() == null || examPaperRecord.getExamScore() < personalExamPaper.getLowestScore())
-                personalExamPaper.setLowestScore(examPaperRecord.getExamScore());
-            //设置考试是否通过
-            if (BooleanUtil.isFalse(personalExamPaper.getPass()) && examPaper.getPassScore() != null && examPaperRecord.getExamScore() >= examPaper.getPassScore()) {
-                personalExamPaper.setPass(true);
-            }
-            personalExamPaperRecordRepository.save(personalExamPaper);
-            examPaperRecordRepository.save(examPaperRecord);
-            stringRedisTemplate.delete(REDIS_PREFIX + RequestHolder.getMemberId());
-            return examPaperRecord;
-        }
+//        if (Objects.equals(examSaveParam.getStatus(), ExamSaveParam.Status.START)) {
+//            return applicationContext.getBean(ExamService.class).createRecord(publishExamPaper);
+//        }
+//        if (Objects.equals(examSaveParam.getStatus(), ExamSaveParam.Status.EXAMIING)) {
+//            examPaperRecordRepository.updateAnswerById(JsonUtils.toJson(examSaveParam.getAnswers()), examSaveParam.getRecordId());
+//            return null;
+//        }
+//        if (Objects.equals(examSaveParam.getStatus(), ExamSaveParam.Status.CONTINUE)) {
+//            //todo 可间断考试
+//            return null;
+//        }
+//        if (Objects.equals(examSaveParam.getStatus(), ExamSaveParam.Status.SUBMIT)) {
+//            ExamRecord examRecord = examPaperRecordRepository.findById(examSaveParam.getRecordId()).orElseThrow(() -> new BusinessException(ResultEnum.EXAM_RECORD_NOT_FOUND));
+//
+//            examRecord.setAnswer(JsonUtils.toJson(examSaveParam.getAnswers()));
+//            ExamPaper examPaper = examPaperRepository.findById(publishExamPaper.getExamPaperId()).orElseThrow(() -> new BusinessException(ResultEnum.PERSONAL_EXAM_PAPER_NOT_FOUND));
+//
+//            List<ExamPaperQuestion> questions = examPaperQuestionRepository.findByExamPaper(examPaper);
+//
+//            int score = questions.stream().mapToInt(question -> examSaveParam.getAnswers().stream().filter(re -> Objects.equals(re.getQuestionId(), question.getId()))
+//                    .findFirst().map(it -> {
+//                        if (question.getType() == Question.Type.SINGLE_SELECT || question.getType() == Question.Type.TRUE_FALSE) {
+//                            Object correctAnswer = JsonUtils.parse(question.getCorrectAnswer(), List.class).get(0);
+//                            return Objects.equals(it.getAnswer(), correctAnswer.toString()) ? question.getScore() : 0;
+//                        }
+//                        if (question.getType() == Question.Type.MULTI_SELECT) {
+//
+//
+//                            List<Question.Answer> answersss = JsonUtils.parse(question.getAnswer(), new TypeReference<>() {
+//                            });
+//
+//                            List<String> cAnswer = JsonUtils.parse(question.getCorrectAnswer(), new TypeReference<>() {
+//                            });
+//                            List<String> userAns = JsonUtils.parse(it.getAnswer(), new TypeReference<>() {
+//                            });
+//
+//
+//                            List<Question.Answer> isTrue = answersss.stream()
+//                                    .filter(answer -> cAnswer.contains(answer.getPrefix()))
+//                                    .filter(c -> userAns.contains(c.getPrefix()))
+//                                    .collect(Collectors.toList());
+//
+//                            return isTrue.stream().mapToInt(i -> i.getScore() == null ? 0 : i.getScore()).sum();
+//                        }
+//                        if (question.getType() == Question.Type.COMPLETION) {
+////                                        List<String> userAns = JsonUtils.parse(it.getAnswer(), new TypeReference<>() {
+////                                        });
+////                                        List<String> cAnswer = JsonUtils.parse(question.getCorrectAnswer(), new TypeReference<>() {
+////                                        });
+////                                        if (userAns.size() != cAnswer.size())
+////                                            return 0;
+////
+//                            return Objects.equals(it.getAnswer(), question.getCorrectAnswer()) ? question.getScore() : 0;
+//                        }
+//
+//                        if (question.getType() == Question.Type.SHORT_ANSWER) {
+//                            StringSimilarity stringSimilarity = new Jaccard();
+//                            if (StringUtils.isEmpty(it.getAnswer())) return 0;
+//                            double result = stringSimilarity.similarity(question.getCorrectAnswer(), it.getAnswer());
+//                            return (int) result * question.getScore();
+//                        }
+//                        return 0;
+//                    }).orElse(0)).sum();
+//            examRecord.setExamScore(score);
+//
+//            //如果设置最大考试次数且 当前考试次数大于等于最大考试次数则考试结束
+//            if (examPaper.getMaxExamCount() > 0 && publishExamPaper.getExamCount() + 1 >= examPaper.getMaxExamCount())
+//                publishExamPaper.setStatus(PublishExamPaper.Status.END);
+//            publishExamPaper.setExamCount(publishExamPaper.getExamCount() + 1);
+//            //设置考试最高分数
+//            if (publishExamPaper.getHighestScore() == null || examRecord.getExamScore() > publishExamPaper.getHighestScore())
+//                publishExamPaper.setHighestScore(examRecord.getExamScore());
+//            //设置考试最低分数
+//            if (publishExamPaper.getLowestScore() == null || examRecord.getExamScore() < publishExamPaper.getLowestScore())
+//                publishExamPaper.setLowestScore(examRecord.getExamScore());
+//            //设置考试是否通过
+//            if (BooleanUtil.isFalse(publishExamPaper.getPass()) && examPaper.getPassScore() != null && examRecord.getExamScore() >= examPaper.getPassScore()) {
+//                publishExamPaper.setPass(true);
+//            }
+//            publishExamPaperRepository.save(publishExamPaper);
+//            examPaperRecordRepository.save(examRecord);
+//            stringRedisTemplate.delete(REDIS_PREFIX + RequestHolder.getMemberId());
+//            return examRecord;
+//        }
         return null;
     }
 
     @Transactional
-    public Object createRecord(PersonalExamPaper personalExamPaper) {
-        ExamPaperRecord record = new ExamPaperRecord();
-        record.setUserId(Long.valueOf(RequestHolder.getMemberId()));
-        record.setExamPaperId(personalExamPaper.getExamPaperId());
-        record.setStartTime(LocalDateTime.now());
-        record.setPass(false);
-        record.setPersonalExamPaperId(personalExamPaper.getId());
-        personalExamPaperRecordRepository.incExamCount(personalExamPaper.getId());
-        return examPaperRecordRepository.save(record);
+    public Object createRecord(PublishExamPaper publishExamPaper) {
+//        ExamRecord record = new ExamRecord();
+//        record.setUserId(Long.valueOf(RequestHolder.getMemberId()));
+//        record.setExamPaperId(publishExamPaper.getExamPaperId());
+//        record.setStartTime(LocalDateTime.now());
+//        record.setPass(false);
+//        record.setPersonalExamPaperId(publishExamPaper.getId());
+//        publishExamPaperRepository.incExamCount(publishExamPaper.getId());
+//        return examPaperRecordRepository.save(record);
+        return null;
     }
 
-    private PersonalExamPaper getPersonalExamPaper(ExamSaveParam examSaveParam) {
-        PersonalExamPaper personalExamPaper;
-        ExamPaper examPaper;
-        String exam = stringRedisTemplate.opsForValue().get(REDIS_PREFIX + RequestHolder.getMemberId());
-        if (StringUtils.isEmpty(exam)) {
-            personalExamPaper = personalExamPaperRecordRepository.findById(examSaveParam.getExamId()).orElseThrow(() -> new BusinessException(ResultEnum.PERSONAL_EXAM_PAPER_NOT_FOUND));
-            if (personalExamPaper.getStatus() == PersonalExamPaper.Status.END)
-                throw new BusinessException(ResultEnum.PERSONAL_EXAM_PAPER_END);
-            examPaper = examPaperRepository.findById(personalExamPaper.getExamPaperId()).orElseThrow(() -> new BusinessException(ResultEnum.PERSONAL_EXAM_PAPER_NOT_FOUND));
-            stringRedisTemplate.opsForValue().set(REDIS_PREFIX + RequestHolder.getMemberId(), JsonUtils.toJson(personalExamPaper), examPaper.getExamTime() + 30, TimeUnit.SECONDS);
-        } else {
-            personalExamPaper = JsonUtils.parse(exam, PersonalExamPaper.class);
-            if (!Objects.equals(personalExamPaper.getId(), examSaveParam.getExamId()))
-                throw new BusinessException(ResultEnum.PARAM_ERROR);//当前用户上传考试id和正在考试记录id冲突
-        }
-        return personalExamPaper;
+    private PublishExamPaper getPersonalExamPaper(ExamSaveParam examSaveParam) {
+//        PublishExamPaper publishExamPaper;
+//        ExamPaper examPaper;
+//
+//
+//
+//        String exam = stringRedisTemplate.opsForValue().get(REDIS_PREFIX + RequestHolder.getMemberId());
+//        if (StringUtils.isEmpty(exam)) {
+//            publishExamPaper = personalExamPaperRecordRepository.findById(examSaveParam.getExamId()).orElseThrow(() -> new BusinessException(ResultEnum.PERSONAL_EXAM_PAPER_NOT_FOUND));
+//            if (publishExamPaper.getStatus() == PublishExamPaper.Status.END)
+//                throw new BusinessException(ResultEnum.PERSONAL_EXAM_PAPER_END);
+//            examPaper = examPaperRepository.findById(publishExamPaper.getExamPaperId()).orElseThrow(() -> new BusinessException(ResultEnum.PERSONAL_EXAM_PAPER_NOT_FOUND));
+//            stringRedisTemplate.opsForValue().set(REDIS_PREFIX + RequestHolder.getMemberId(), JsonUtils.toJson(publishExamPaper), examPaper.getExamTime() + 30, TimeUnit.SECONDS);
+//        } else {
+//            publishExamPaper = JsonUtils.parse(exam, PublishExamPaper.class);
+//            if (!Objects.equals(publishExamPaper.getId(), examSaveParam.getExamId()))
+//                throw new BusinessException(ResultEnum.PARAM_ERROR);//当前用户上传考试id和正在考试记录id冲突
+//        }
+//        return publishExamPaper;
+        PublishExamPaper publishExamPaper = publishExamPaperRepository.findById(examSaveParam.getExamId()).orElseThrow(() -> new BusinessException(ResultEnum.PERSONAL_EXAM_PAPER_NOT_FOUND));
+
+
+//        if (publishExamPaper.getStatus() == PublishExamPaper.Status.END)
+//            throw new BusinessException(ResultEnum.PERSONAL_EXAM_PAPER_END);
+//        return examPaperRepository.findById(publishExamPaper.getExamPaperId()).orElseThrow(() -> new BusinessException(ResultEnum.PERSONAL_EXAM_PAPER_NOT_FOUND));
+        return null;
     }
 }

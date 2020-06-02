@@ -1,54 +1,55 @@
 package com.virgo.exam.model;
 
 import lombok.Data;
-import org.springframework.data.annotation.CreatedBy;
-import org.springframework.data.annotation.CreatedDate;
-import org.springframework.data.annotation.LastModifiedBy;
-import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+import org.springframework.data.annotation.*;
+import org.springframework.data.mongodb.core.mapping.Document;
 
-import javax.persistence.*;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Data
-@Entity
-@Table
-@EntityListeners(AuditingEntityListener.class)
+@Document("exam-question")
 public class Question {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private String id;
+
     private String code;
     /**
      * 分类
      */
     private String category;
+    /**
+     * 题目类型
+     */
     private Type type;
     /**
-     * 级别（等级、年级等）
+     * 分数
      */
-    private String level;
     private Integer score;
-    private Integer difficult; //难度 1-10
+    /**
+     * 难度
+     */
+    private Integer difficult; //难度 1-5
+    /**
+     * 标题
+     */
     private String title;
-    private String content;
     /**
-     * json格式
-     * {
-     * "prefix": "A",
-     * "content": "A选项",
-     * "score": 1
-     * }
+     * 题干
      */
-    private String answer;
-    private String correctAnswer;
+    private String stem;
     /**
-     *
+     * 答案
      */
-    private String tags;
+    private List<Answer> answer;
+    /**
+     * 简答题打分标准
+     */
+    private List<ShortAnswerAnalysis> shortAnswerAnalysis;
+
     /**
      * 解析
      */
-
     private String analysis;
     @CreatedBy
     private String creator;//创建人code
@@ -64,9 +65,35 @@ public class Question {
 
     @Data
     public static class Answer {
-        private String prefix;
+        /**
+         * id
+         */
+        private Integer id;
+        /**
+         * 答案内容
+         */
         private String content;
+        /**
+         * 分数
+         */
         private Integer score;
+        /**
+         * 是否是正确答案
+         */
+        private Boolean isCorrect;
+    }
+
+
+    @Data
+    public static class ShortAnswerAnalysis {
+        /**
+         * 关键字
+         */
+        private String keyWords;
+        /**
+         * 分数
+         */
+        private Double score;
     }
 
     public static enum Type {

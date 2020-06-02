@@ -4,7 +4,7 @@ import com.virgo.common.page.PageResult;
 import com.virgo.common.response.ResultData;
 import com.virgo.exam.dto.ExamPaperQueryParam;
 import com.virgo.exam.service.ExamPaperService;
-import com.virgo.exam.vo.ExamPaperVO;
+import com.virgo.exam.vo.PublishExamPaperVO;
 import io.swagger.annotations.ApiOperation;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -21,13 +21,13 @@ public class ExamPaperController {
 
     @ApiOperation(value = "试卷列表", notes = "试卷列表")
     @GetMapping("v1/exam/paper")
-    public ResultData<PageResult<ExamPaperVO>> findPage(@Valid ExamPaperQueryParam questionQueryParam) {
+    public ResultData<PageResult<PublishExamPaperVO>> findPage(@Valid ExamPaperQueryParam questionQueryParam) {
         return ResultData.success(examPaperService.findPage(questionQueryParam));
     }
 
     @ApiOperation(value = "试卷列表", notes = "试卷列表")
     @GetMapping("v1/exam/paper/{id}")
-    public ResultData<ExamPaperVO> findPage(@PathVariable Long id) {
+    public ResultData<PublishExamPaperVO> findPage(@PathVariable String id) {
         return ResultData.success(examPaperService.findById(id));
     }
 }

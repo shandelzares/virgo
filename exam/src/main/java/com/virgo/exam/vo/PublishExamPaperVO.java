@@ -1,22 +1,21 @@
-package com.virgo.exam.model;
+package com.virgo.exam.vo;
 
+import com.virgo.exam.model.ExamPaper;
+import com.virgo.exam.model.PublishExamPaper;
 import lombok.Data;
-import org.springframework.data.annotation.*;
-import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.Version;
 
 import java.time.LocalDateTime;
 import java.util.List;
 
 @Data
-@Document("exam-paper")
-public class ExamPaper {
-
-    @Id
+public class PublishExamPaperVO {
     private String id;
     /**
-     * 编码
+     * 对应试卷id
      */
-    private String code;
+    private String examPaperId;
     /**
      * 名称
      */
@@ -28,7 +27,7 @@ public class ExamPaper {
     /**
      * 试卷类型
      */
-    private Type type;
+    private ExamPaper.Type type;
     /**
      * 分数
      */
@@ -85,52 +84,21 @@ public class ExamPaper {
      * 选项乱序
      */
     private Boolean optionsDerangement;     //选项乱序
-    /**
-     * 状态
-     */
-    private Status status;
 
-    @Transient
-    private List<Question> questions;
+    private Integer examCount;      //考试次数
+    private Boolean pass;           //是否通过考试
+    private Integer highestScore;   //考试获得最高分数
+    private Integer lowestScore;    //考试获得最高分数
 
-    @CreatedBy
-    private String creator;//创建人code
-    @LastModifiedBy
-    private String revisor;//更新人code
-    private LocalDateTime updateTime;
+    private PublishExamPaper.Status status;
+    private LocalDateTime startTime;
+
+    private List<QuestionVO> questions;
+
     @CreatedDate
     private LocalDateTime createTime;
     @Version
     private Long version;
     private String companyCode;
 
-    public static enum Status {
-        /**
-         * 草稿
-         */
-        DRAFT,
-        /**
-         * 发布
-         */
-        PUBLISHED,
-        /**
-         * 删除
-         */
-        DELETED
-    }
-
-    public static enum Type {
-        /**
-         * 考试
-         */
-        EXAM,
-        /**
-         * 练习
-         */
-        EXERCISE,
-        /**
-         * 问卷
-         */
-        QUESTIONNAIRE,
-    }
 }
