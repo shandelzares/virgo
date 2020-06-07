@@ -28,8 +28,8 @@
 
     <properties>
         <java.version>11</java.version>
-        <spring-cloud.version>Hoxton.SR3</spring-cloud.version>
-        <spring.boot.version>2.2.6.RELEASE</spring.boot.version>
+        <spring-cloud.version>Hoxton.SR5</spring-cloud.version>
+        <spring.boot.version>2.3.0.RELEASE</spring.boot.version>
         <spring-boot-admin.version>2.2.1</spring-boot-admin.version>
         <springfox.swagger.version>2.9.2</springfox.swagger.version>
         <aliyun-java-sdk>4.4.6</aliyun-java-sdk>
