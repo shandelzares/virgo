@@ -1,12 +1,10 @@
 package com.virgo.member.model;
 
 import lombok.Data;
-import org.hibernate.validator.constraints.UniqueElements;
 import org.springframework.data.annotation.CreatedBy;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedBy;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
-import org.springframework.stereotype.Indexed;
 
 import javax.persistence.*;
 import java.time.LocalDate;
