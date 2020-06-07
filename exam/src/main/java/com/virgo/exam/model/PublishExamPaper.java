@@ -17,6 +17,7 @@ public class PublishExamPaper {
     private String memberId;
 
     private Integer examCount;      //考试次数
+    private Integer lastScore;      //最后一次考试分数
     private Boolean pass;           //是否通过考试
     private Integer highestScore;   //考试获得最高分数
     private Integer lowestScore;    //考试获得最高分数
@@ -33,6 +34,13 @@ public class PublishExamPaper {
 
     public static enum Status {
         START,
+        /**
+         * 阅卷中
+         */
+        SCORING,
+        /**
+         * 考试结束
+         */
         END
     }
 }

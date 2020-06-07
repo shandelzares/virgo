@@ -33,6 +33,11 @@ public class PublishExamPaperVO {
      */
     private Integer score;
     /**
+     * 最后一次考试分数
+     */
+    private Integer lastScore;      //最后一次考试分数
+
+    /**
      * 及格线
      */
     private Integer passScore;      //及格线
@@ -75,7 +80,7 @@ public class PublishExamPaperVO {
     /**
      * 题目个数
      */
-    private Integer questionCount;   //最多考试次数
+    private Integer questionCount;
     /**
      * 题目乱序
      */

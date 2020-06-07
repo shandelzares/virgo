@@ -1,19 +1,26 @@
 package com.virgo.exam.service;
 
+import cn.hutool.core.bean.BeanUtil;
+import com.aliyuncs.utils.StringUtils;
 import com.virgo.common.exception.BusinessException;
 import com.virgo.common.exception.ResultEnum;
 import com.virgo.exam.dto.ExamSaveParam;
-import com.virgo.exam.model.PublishExamPaper;
+import com.virgo.exam.dto.ExamSubmitParam;
+import com.virgo.exam.model.*;
 import com.virgo.exam.repository.ExamPaperQuestionRepository;
 import com.virgo.exam.repository.ExamPaperRecordRepository;
 import com.virgo.exam.repository.ExamPaperRepository;
 import com.virgo.exam.repository.PublishExamPaperRepository;
-import org.springframework.context.ApplicationContext;
-import org.springframework.data.redis.core.StringRedisTemplate;
+import com.virgo.exam.vo.ExamVO;
+import info.debatty.java.stringsimilarity.Jaccard;
+import info.debatty.java.stringsimilarity.interfaces.StringSimilarity;
+import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 public class ExamService {
@@ -26,10 +33,7 @@ public class ExamService {
     @Resource
     private ExamPaperQuestionRepository examPaperQuestionRepository;
     @Resource
-    private StringRedisTemplate stringRedisTemplate;
-    @Resource
-    private ApplicationContext applicationContext;
-    private static final String REDIS_PREFIX = "exam:member";
+    private MongoTemplate mongoTemplate;
 
     public Object exam(ExamSaveParam examSaveParam) {
 //        PublishExamPaper publishExamPaper = getPersonalExamPaper(examSaveParam);
@@ -160,5 +164,116 @@ public class ExamService {
 //            throw new BusinessException(ResultEnum.PERSONAL_EXAM_PAPER_END);
 //        return examPaperRepository.findById(publishExamPaper.getExamPaperId()).orElseThrow(() -> new BusinessException(ResultEnum.PERSONAL_EXAM_PAPER_NOT_FOUND));
         return null;
+    }
+
+    public ExamVO exam(String id, ExamSubmitParam examSaveParam) {
+        ExamVO vo = new ExamVO();
+        PublishExamPaper publishExamPaper = publishExamPaperRepository.findById(id).orElseThrow(() -> new BusinessException(ResultEnum.PERSONAL_EXAM_PAPER_NOT_FOUND));
+        ExamPaper examPaper = examPaperRepository.findById(publishExamPaper.getExamPaperId()).orElseThrow(() -> new BusinessException(ResultEnum.PERSONAL_EXAM_PAPER_NOT_FOUND));
+
+        ExamRecord record = new ExamRecord();
+        record.setExamPaperId(examPaper.getId());
+        record.setPublishExamPaperId(publishExamPaper.getId());
+        List<ExamPaperQuestion> questions = examPaperQuestionRepository.findByExamPaperId(examPaper.getId());
+
+        List<ExamRecord.Question> questionsRecord = getQuestions(examSaveParam, questions);
+
+        record.setQuestions(questionsRecord);
+
+        if (examPaper.getAutoScoring()) {
+            int score = questionsRecord.stream().mapToInt(ExamRecord.Question::getObtainScore).sum();
+            publishExamPaper.setPass(score >= examPaper.getPassScore());
+            record.setExamScore(score);
+            //设置考试最高分数
+            if (publishExamPaper.getHighestScore() == null || score > publishExamPaper.getHighestScore())
+                publishExamPaper.setHighestScore(score);
+            //设置考试最低分数
+            if (publishExamPaper.getLowestScore() == null || score < publishExamPaper.getLowestScore())
+                publishExamPaper.setLowestScore(score);
+        }
+        publishExamPaper.setLastScore(record.getExamScore());
+        //如果设置最大考试次数且 当前考试次数大于等于最大考试次数则考试结束
+        if (examPaper.getMaxExamCount() > 0 && publishExamPaper.getExamCount() + 1 >= examPaper.getMaxExamCount())
+            publishExamPaper.setStatus(PublishExamPaper.Status.END);
+        publishExamPaper.setExamCount(publishExamPaper.getExamCount() + 1);
+
+        publishExamPaperRepository.save(publishExamPaper);
+        examPaperRecordRepository.save(record);
+        vo.setScoring(examPaper.getAutoScoring());
+        vo.setExamScore(record.getExamScore());
+        vo.setPass(record.getPass());
+        return vo;
+    }
+
+    private List<ExamRecord.Question> getQuestions(ExamSubmitParam examSaveParam, List<ExamPaperQuestion> questions) {
+        return questions.stream().map(question -> {
+            ExamRecord.Question examQuestion = new ExamRecord.Question();
+            BeanUtil.copyProperties(question, examQuestion);
+
+            examSaveParam.getAnswers()
+                    .stream()
+                    .filter(it -> Objects.equals(it.getQuestionId(), question.getId()))
+                    .findFirst()
+                    .ifPresentOrElse(answer -> {
+                        examQuestion.setObtainScore(0);
+                        if (question.getType() == Question.Type.SINGLE_SELECT || question.getType() == Question.Type.TRUE_FALSE) {
+                            if (answer.getContent() != null) {
+                                int selected = (int) answer.getContent();
+                                question.getAnswer().stream().filter(Question.Answer::getIsCorrect).findFirst().ifPresent(correctAnswer -> {
+                                    if (correctAnswer.getId() == selected) {
+                                        examQuestion.setObtainScore(question.getScore());
+                                    }
+                                });
+                            }
+                        } else if (question.getType() == Question.Type.MULTI_SELECT) {
+                            if (answer.getContent() != null) {
+                                List<Integer> selected = new ArrayList<>((List<Integer>) answer.getContent());
+
+                                List<Integer> correct = question.getAnswer()
+                                        .stream()
+                                        .filter(Question.Answer::getIsCorrect).map(Question.Answer::getId)
+                                        .collect(Collectors.toList());
+                                if (selected.size() == correct.size()) {
+                                    correct.removeAll(selected);
+                                    if (correct.size() == 0) {
+                                        examQuestion.setObtainScore(question.getScore());
+                                    }
+                                }
+                            }
+                        } else if (question.getType() == Question.Type.COMPLETION) {
+                            if (answer.getContent() != null) {
+
+                                List<Map<String, Object>> selected = new ArrayList<>((List<Map<String, Object>>) answer.getContent());
+
+                                int sum = question.getAnswer()
+                                        .stream()
+                                        .mapToInt(correct -> selected.stream()
+                                                .filter(s -> (s.get("id")) == correct.getId())
+                                                .findFirst()
+                                                .map(it -> {
+                                                    if (Objects.equals(it.get("content"), correct.getContent()))
+                                                        return correct.getScore();
+                                                    return 0;
+                                                }).orElse(0)).sum();
+                                examQuestion.setObtainScore(sum);
+                            }
+
+                        } else if (question.getType() == Question.Type.SHORT_ANSWER) {
+                            if (answer.getContent() != null) {
+
+                                String selected = (String) answer.getContent();
+                                if (!StringUtils.isEmpty(selected)) {
+                                    StringSimilarity stringSimilarity = new Jaccard();
+                                    double result = stringSimilarity.similarity(question.getAnalysis(), selected);
+                                    examQuestion.setObtainScore((int) result * question.getScore());
+                                }
+                            }
+                        }
+                    }, () -> {
+                        examQuestion.setObtainScore(0);
+                    });
+
+            return examQuestion;
+        }).collect(Collectors.toList());
     }
 }
