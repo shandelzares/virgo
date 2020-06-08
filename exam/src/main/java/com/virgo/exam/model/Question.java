@@ -47,7 +47,6 @@ public class Question {
      */
     private List<ShortAnswerAnalysis> shortAnswerAnalysis;
 
-    private RandomConfig randomConfig;
 
     /**
      * 解析
@@ -101,6 +100,7 @@ public class Question {
     @Data
     public static class RandomConfig {
         private String category;
+        private Question.Type type;
         private Integer questionCount;
         private Integer totalScore;
     }

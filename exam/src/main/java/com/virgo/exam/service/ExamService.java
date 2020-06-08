@@ -7,10 +7,7 @@ import com.virgo.common.exception.ResultEnum;
 import com.virgo.exam.dto.ExamSaveParam;
 import com.virgo.exam.dto.ExamSubmitParam;
 import com.virgo.exam.model.*;
-import com.virgo.exam.repository.ExamPaperQuestionRepository;
-import com.virgo.exam.repository.ExamPaperRecordRepository;
-import com.virgo.exam.repository.ExamPaperRepository;
-import com.virgo.exam.repository.PublishExamPaperRepository;
+import com.virgo.exam.repository.*;
 import com.virgo.exam.vo.ExamVO;
 import info.debatty.java.stringsimilarity.Jaccard;
 import info.debatty.java.stringsimilarity.interfaces.StringSimilarity;
@@ -19,6 +16,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -34,6 +32,8 @@ public class ExamService {
     private ExamPaperQuestionRepository examPaperQuestionRepository;
     @Resource
     private MongoTemplate mongoTemplate;
+    @Resource
+    private QuestionRepository questionRepository;
 
     public Object exam(ExamSaveParam examSaveParam) {
 //        PublishExamPaper publishExamPaper = getPersonalExamPaper(examSaveParam);
@@ -168,13 +168,28 @@ public class ExamService {
 
     public ExamVO exam(String id, ExamSubmitParam examSaveParam) {
         ExamVO vo = new ExamVO();
+        LocalDateTime now = LocalDateTime.now();
         PublishExamPaper publishExamPaper = publishExamPaperRepository.findById(id).orElseThrow(() -> new BusinessException(ResultEnum.PERSONAL_EXAM_PAPER_NOT_FOUND));
         ExamPaper examPaper = examPaperRepository.findById(publishExamPaper.getExamPaperId()).orElseThrow(() -> new BusinessException(ResultEnum.PERSONAL_EXAM_PAPER_NOT_FOUND));
+        if (publishExamPaper.getExamCount() >= examPaper.getMaxExamCount()) {
+            throw new BusinessException(ResultEnum.EXAM_COUNT_USED_ALL);
+        }
+        if (examPaper.getExamEndTime().isBefore(now)) {
+            throw new BusinessException(ResultEnum.PERSONAL_EXAM_PAPER_END);
+        }
+        if (examPaper.getExamStartTime().isAfter(now)) {
+            throw new BusinessException(ResultEnum.PERSONAL_EXAM_PAPER_NOT_START);
+        }
 
         ExamRecord record = new ExamRecord();
         record.setExamPaperId(examPaper.getId());
         record.setPublishExamPaperId(publishExamPaper.getId());
         List<ExamPaperQuestion> questions = examPaperQuestionRepository.findByExamPaperId(examPaper.getId());
+        List<String> ids = examSaveParam.getAnswers().stream().filter(it -> questions.stream().noneMatch(a -> Objects.equals(a.getId(), it.getQuestionId()))).map(ExamSubmitParam.Answer::getQuestionId).collect(Collectors.toList());
+        List<ExamPaperQuestion> extQ = questionRepository.findByIdIn(ids).stream().map(it -> {
+            return BeanUtil.copyProperties(it, ExamPaperQuestion.class);
+        }).collect(Collectors.toList());
+        questions.addAll(extQ);
 
         List<ExamRecord.Question> questionsRecord = getQuestions(examSaveParam, questions);
 

@@ -62,6 +62,9 @@ public class ExamPaperQuestion {
      */
     private String analysis;
 
+    private Question.RandomConfig randomConfig;
+
+
     @Version
     private Long version;
 
