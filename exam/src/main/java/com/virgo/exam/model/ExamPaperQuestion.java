@@ -57,11 +57,11 @@ public class ExamPaperQuestion {
      */
     private List<Question.ShortAnswerAnalysis> shortAnswerAnalysis;
 
+
     /**
      * 解析
      */
     private String analysis;
-
     private Question.RandomConfig randomConfig;
 
 
