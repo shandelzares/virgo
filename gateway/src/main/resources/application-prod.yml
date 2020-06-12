@@ -1,19 +1,20 @@
 spring:
   redis:
-    host: 123.56.7.121
+    host: 127.0.0.1
     password: rd0U.p57RqZ!7e
-    database: 11
+    database: 15
   datasource:
-    url: jdbc:mysql://127.0.0.1:3306/virgo?useSSL=true&serverTimezone=GMT%2B8
-    username: root
-    password: qwe123
+    url: jdbc:mysql://5628e0ad1c559.sh.cdb.myqcloud.com:9993/virgo?useSSL=true&serverTimezone=GMT%2B8
+    username: cdb_outerroot
+    password: Vsl88402_uuY6
     driver-class-name: com.mysql.cj.jdbc.Driver
   boot:
     admin:
       client:
-        url: http://123.56.7.121:8866
+        url: http://141.164.49.58:8866
         instance:
           prefer-ip: true
+          service-url: http://123.56.7.121:8000
 management:
   endpoints:
     web:
