@@ -47,6 +47,7 @@ public class Question {
      */
     private List<ShortAnswerAnalysis> shortAnswerAnalysis;
 
+
     /**
      * 解析
      */
@@ -96,6 +97,14 @@ public class Question {
         private Double score;
     }
 
+    @Data
+    public static class RandomConfig {
+        private String category;
+        private Question.Type type;
+        private Integer questionCount;
+        private Integer totalScore;
+    }
+
     public static enum Type {
         /**
          * 单选
@@ -124,6 +133,10 @@ public class Question {
         /**
          * 分数
          */
-        SCORE
+        SCORE,
+        /**
+         * 随机题目
+         */
+        RANDOM
     }
 }

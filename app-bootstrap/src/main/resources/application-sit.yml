@@ -2,7 +2,7 @@ spring:
   redis:
     host: 123.56.7.121
     password: rd0U.p57RqZ!7e
-    database: 11
+    database: 15
   datasource:
     url: jdbc:mysql://5628e0ad1c559.sh.cdb.myqcloud.com:9993/demo-test?useSSL=true&serverTimezone=GMT%2B8
     username: cdb_outerroot
@@ -10,7 +10,7 @@ spring:
     driver-class-name: com.mysql.cj.jdbc.Driver
   data:
     mongodb:
-      uri: mongodb://admin:UmVvsINhf03dko42@123.56.7.121:27017/virgo-exam?authSource=admin&maxPoolSize=200
+      uri: mongodb://admin:UmVvsINhf03dko42@123.56.7.121:27017/virgo-test?authSource=admin&maxPoolSize=200
   jpa:
     show-sql: true
     hibernate:

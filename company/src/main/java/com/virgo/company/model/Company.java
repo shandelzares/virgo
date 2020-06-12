@@ -21,6 +21,7 @@ public class Company {
     private String shortName;
     private String brandName;
     private String code;
+    private String host;
     private String telPhone;
     private String phone;
     private String contactPersonPhone;
