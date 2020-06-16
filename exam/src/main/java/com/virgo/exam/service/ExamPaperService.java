@@ -51,7 +51,7 @@ public class ExamPaperService {
 
     public PageResult<PublishExamPaperVO> findPage(@Valid ExamPaperQueryParam questionQueryParam) {
         PublishExamPaper query = BeanUtil.copyProperties(questionQueryParam, PublishExamPaper.class);
-        query.setMemberId(RequestHolder.getMemberId());
+        query.setUserId(RequestHolder.getUserId());
         Page<PublishExamPaper> personalExamPapers = publishExamPaperRepository.findAll(Example.of(query), questionQueryParam.pageable());
 
         List<ExamPaper> examPapers = examPaperRepository.findByIdIn(personalExamPapers.getContent().stream().map(PublishExamPaper::getExamPaperId).collect(Collectors.toList()));

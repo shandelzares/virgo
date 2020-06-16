@@ -15,6 +15,7 @@ public class PublishExamPaper {
     private String id;
     private String examPaperId;
     private String memberId;
+    private String userId;
 
     private Integer examCount;      //考试次数
     private Integer lastScore;      //最后一次考试分数

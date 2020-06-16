@@ -1,7 +1,7 @@
 spring:
   redis:
-#    host: 123.56.7.121
-    host: 127.0.0.1
+    host: 123.56.7.121
+#    host: 127.0.0.1
     password: rd0U.p57RqZ!7e
     database: 15
   datasource:
@@ -11,8 +11,8 @@ spring:
     driver-class-name: com.mysql.cj.jdbc.Driver
   data:
     mongodb:
-      uri: mongodb://admin:UmVvsINhf03dko42@127.0.0.1:27017/virgo-exam?authSource=admin&maxPoolSize=200
-#      uri: mongodb://admin:UmVvsINhf03dko42@123.56.7.121:27017/virgo-exam?authSource=admin&maxPoolSize=200
+#      uri: mongodb://admin:UmVvsINhf03dko42@127.0.0.1:27017/virgo-exam?authSource=admin&maxPoolSize=200
+      uri: mongodb://admin:UmVvsINhf03dko42@123.56.7.121:27017/virgo-exam?authSource=admin&maxPoolSize=200
   jpa:
     show-sql: true
     hibernate:

@@ -26,6 +26,7 @@ public class WebConfig implements WebMvcConfigurer {
                     String memberId = request.getHeader(MEMBER_ID);
                     String companyCode = request.getHeader(COMPANY_CODE);
                     RequestHolder.setMemberId(memberId);
+                    RequestHolder.setUserId(request.getHeader("USER_ID"));
                     RequestHolder.setCompanyCode(companyCode);
                     String traceId = request.getHeader(TRACE_ID);
                     MDC.put(TRACE_ID, StringUtils.isEmpty(traceId) ? "" : "[" + traceId + "]");
