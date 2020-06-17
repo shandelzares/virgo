@@ -23,6 +23,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.aggregation.Aggregation;
 import org.springframework.data.mongodb.core.aggregation.AggregationResults;
+import org.springframework.data.mongodb.core.aggregation.MatchOperation;
 import org.springframework.data.mongodb.core.aggregation.TypedAggregation;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.stereotype.Service;
@@ -90,9 +91,14 @@ public class ExamPaperService {
             for (ExamPaperQuestion question : questions) {
                 if (question.getType() == Question.Type.RANDOM) {
                     String category = question.getRandomConfig().getCategory();
+                    Criteria criteria = Criteria.where("category").is(category);
+                    if (question.getRandomConfig().getType() != null)
+                        criteria.and("type").is(question.getRandomConfig().getType());
+
+
                     AggregationResults<Question> qus = mongoTemplate.aggregate(
                             Aggregation.newAggregation(
-                                    Aggregation.match(Criteria.where("category").is(category).and("type").is(question.getRandomConfig().getType())),
+                                    Aggregation.match(criteria),
                                     Aggregation.sample(question.getRandomConfig().getQuestionCount())),
                             Question.class, Question.class);
                     qus.forEach(q -> {
