@@ -40,7 +40,7 @@ public class ExamPaper {
     /**
      * 平均难度
      */
-    private Integer avgDifficult;   //平均难度
+    private Float avgDifficult;   //平均难度
     /**
      * 考试时长
      */
