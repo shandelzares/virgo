@@ -13,5 +13,6 @@ public class ExamSubmitParam {
     public static class Answer {
         private String questionId;
         private Object content;
+        private Integer score;
     }
 }

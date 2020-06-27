@@ -236,7 +236,7 @@ public class ExamService {
                                 int selected = (int) answer.getContent();
                                 question.getAnswer().stream().filter(Question.Answer::getIsCorrect).findFirst().ifPresent(correctAnswer -> {
                                     if (correctAnswer.getId() == selected) {
-                                        examQuestion.setObtainScore(question.getScore());
+                                        examQuestion.setObtainScore(answer.getScore());
                                     }
                                 });
                             }
@@ -251,7 +251,7 @@ public class ExamService {
                                 if (selected.size() == correct.size()) {
                                     correct.removeAll(selected);
                                     if (correct.size() == 0) {
-                                        examQuestion.setObtainScore(question.getScore());
+                                        examQuestion.setObtainScore(answer.getScore());
                                     }
                                 }
                             }
@@ -259,17 +259,35 @@ public class ExamService {
                             if (answer.getContent() != null) {
 
                                 List<Map<String, Object>> selected = new ArrayList<>((List<Map<String, Object>>) answer.getContent());
+                                int sum;
+                                if (answer.getScore() > 0) {
+                                    int size = question.getAnswer().size();
+                                    long count = question.getAnswer()
+                                            .stream()
+                                            .filter(correct -> {
+                                                Boolean fl = selected.stream()
+                                                        .filter(s -> (s.get("id")) == correct.getId())
+                                                        .findFirst()
+                                                        .filter(it -> Objects.equals(it.get("content"), correct.getContent())).isPresent();
+                                                return fl;
+                                            }).count();
 
-                                int sum = question.getAnswer()
-                                        .stream()
-                                        .mapToInt(correct -> selected.stream()
-                                                .filter(s -> (s.get("id")) == correct.getId())
-                                                .findFirst()
-                                                .map(it -> {
-                                                    if (Objects.equals(it.get("content"), correct.getContent()))
-                                                        return correct.getScore();
-                                                    return 0;
-                                                }).orElse(0)).sum();
+                                    if (count == size)
+                                        sum = answer.getScore();
+                                    else
+                                        sum = Math.toIntExact((count * answer.getScore()) / size);
+                                } else {
+                                    sum = question.getAnswer()
+                                            .stream()
+                                            .mapToInt(correct -> selected.stream()
+                                                    .filter(s -> (s.get("id")) == correct.getId())
+                                                    .findFirst()
+                                                    .map(it -> {
+                                                        if (Objects.equals(it.get("content"), correct.getContent()))
+                                                            return correct.getScore();
+                                                        return 0;
+                                                    }).orElse(0)).sum();
+                                }
                                 examQuestion.setObtainScore(sum);
                             }
 
@@ -280,7 +298,7 @@ public class ExamService {
                                 if (!StringUtils.isEmpty(selected)) {
                                     StringSimilarity stringSimilarity = new Jaccard();
                                     double result = stringSimilarity.similarity(question.getAnalysis(), selected);
-                                    examQuestion.setObtainScore((int) result * question.getScore());
+                                    examQuestion.setObtainScore((int) result * answer.getScore());
                                 }
                             }
                         }

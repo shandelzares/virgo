@@ -103,6 +103,7 @@ public class Question {
         private Question.Type type;
         private Integer questionCount;
         private Integer totalScore;
+        private Integer score;
     }
 
     public static enum Type {

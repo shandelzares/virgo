@@ -103,6 +103,7 @@ public class ExamPaperService {
                             Question.class, Question.class);
                     qus.forEach(q -> {
                         QuestionVO questionVO = getQuestionVO(q, q.getAnswer());
+                        questionVO.setScore(question.getRandomConfig().getScore());
                         questionVOS.add(questionVO);
                     });
                     continue;
