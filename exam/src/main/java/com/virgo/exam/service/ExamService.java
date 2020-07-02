@@ -198,7 +198,7 @@ public class ExamService {
 
         List<ExamRecord.Question> questionsRecord = getQuestions(examSaveParam, questions);
 
-        record.setQuestions(questionsRecord);
+
 
         if (examPaper.getAutoScoring()) {
             int score = questionsRecord.stream().mapToInt(ExamRecord.Question::getObtainScore).sum();
@@ -216,6 +216,8 @@ public class ExamService {
         if (examPaper.getMaxExamCount() > 0 && publishExamPaper.getExamCount() + 1 >= examPaper.getMaxExamCount())
             publishExamPaper.setStatus(PublishExamPaper.Status.END);
         publishExamPaper.setExamCount(publishExamPaper.getExamCount() + 1);
+
+        record.setQuestions(questionsRecord.stream().filter(it-> it.getType() != Question.Type.RANDOM).collect(Collectors.toList()));
 
         publishExamPaperRepository.save(publishExamPaper);
         examPaperRecordRepository.save(record);
