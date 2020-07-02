@@ -17,7 +17,12 @@ import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 @Service
@@ -260,15 +265,32 @@ public class ExamService {
 
                                 List<Map<String, Object>> selected = new ArrayList<>((List<Map<String, Object>>) answer.getContent());
                                 int sum;
+                                List<Question.Answer> answers=new ArrayList<>();
                                 if (answer.getScore() > 0) {
-                                    int size = question.getAnswer().size();
-                                    long count = question.getAnswer()
+                                    String stem = question.getStem();
+
+                                    String rx = "(\\{[^}]+\\})";
+
+                                    int i =0;
+
+                                    Pattern p = Pattern.compile(rx);
+                                    Matcher m = p.matcher(stem);
+                                    while (m.find()) {
+                                        Question.Answer a=  new Question.Answer();
+                                        a.setId(i);
+                                        String s = m.group();
+                                        a.setContent(s.substring(1,s.length()-1));
+                                        answers.add(a);
+                                    }
+
+                                    int size = answers.size();
+                                    long count = answers
                                             .stream()
                                             .filter(correct -> {
                                                 Boolean fl = selected.stream()
                                                         .filter(s -> (s.get("id")) == correct.getId())
                                                         .findFirst()
-                                                        .filter(it -> Objects.equals(it.get("content"), correct.getContent())).isPresent();
+                                                        .filter(it -> org.apache.commons.lang3.StringUtils.equalsIgnoreCase((CharSequence) it.get("content"), correct.getContent())).isPresent();
                                                 return fl;
                                             }).count();
 

@@ -1,8 +1,10 @@
 package com.virgo.exam.vo;
 
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
+@NoArgsConstructor
 public class AnswerVO {
     /**
      * id
@@ -20,4 +22,8 @@ public class AnswerVO {
      * 是否是正确答案
      */
     private Boolean isCorrect;
+
+    public AnswerVO(Integer id) {
+        this.id = id;
+    }
 }

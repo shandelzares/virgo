@@ -34,7 +34,11 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+
+import static com.virgo.exam.model.Question.Type.COMPLETION;
 
 @Slf4j
 @Service
@@ -128,6 +132,30 @@ public class ExamPaperService {
         questionVO.setAnswer(answerVOS);
         questionVO.setAnalysis(null);
         questionVO.setShortAnswerAnalysis(null);
+        if (Objects.equals(questionVO.getType(),COMPLETION)){
+            int i = 0;
+            String stem = questionVO.getStem();
+
+
+            String rx = "(\\{[^}]+\\})";
+
+            StringBuffer sb = new StringBuffer();
+            Pattern p = Pattern.compile(rx);
+            Matcher m = p.matcher(stem);
+            while (m.find()) {
+                m.appendReplacement(sb,++i+"");
+            }
+            m.appendTail(sb);
+
+            questionVO.setStem(sb.toString());
+            List<AnswerVO> ans = new ArrayList<>();
+            for (int j = 0; j < i; j++) {
+                ans.add(new AnswerVO(j));
+            }
+            questionVO.setAnswer(ans);
+
+        }
         return questionVO;
     }
+
 }
