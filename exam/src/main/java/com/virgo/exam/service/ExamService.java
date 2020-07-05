@@ -199,7 +199,6 @@ public class ExamService {
         List<ExamRecord.Question> questionsRecord = getQuestions(examSaveParam, questions);
 
 
-
         if (examPaper.getAutoScoring()) {
             int score = questionsRecord.stream().mapToInt(ExamRecord.Question::getObtainScore).sum();
             publishExamPaper.setPass(score >= examPaper.getPassScore());
@@ -217,7 +216,7 @@ public class ExamService {
             publishExamPaper.setStatus(PublishExamPaper.Status.END);
         publishExamPaper.setExamCount(publishExamPaper.getExamCount() + 1);
 
-        record.setQuestions(questionsRecord.stream().filter(it-> it.getType() != Question.Type.RANDOM).collect(Collectors.toList()));
+        record.setQuestions(questionsRecord.stream().filter(it -> it.getType() != Question.Type.RANDOM).collect(Collectors.toList()));
 
         publishExamPaperRepository.save(publishExamPaper);
         examPaperRecordRepository.save(record);
@@ -240,7 +239,7 @@ public class ExamService {
                         examQuestion.setObtainScore(0);
                         if (question.getType() == Question.Type.SINGLE_SELECT || question.getType() == Question.Type.TRUE_FALSE) {
                             if (answer.getContent() != null) {
-                                int selected = (int) answer.getContent();
+                                int selected = Integer.valueOf(answer.getContent() == null ? "0" : answer.getContent().toString());
                                 question.getAnswer().stream().filter(Question.Answer::getIsCorrect).findFirst().ifPresent(correctAnswer -> {
                                     if (correctAnswer.getId() == selected) {
                                         examQuestion.setObtainScore(answer.getScore());
@@ -249,14 +248,14 @@ public class ExamService {
                             }
                         } else if (question.getType() == Question.Type.MULTI_SELECT) {
                             if (answer.getContent() != null) {
-                                List<Integer> selected = new ArrayList<>((List<Integer>) answer.getContent());
+                                List<String> selected = new ArrayList<>((List<String>) answer.getContent());
 
                                 List<Integer> correct = question.getAnswer()
                                         .stream()
                                         .filter(Question.Answer::getIsCorrect).map(Question.Answer::getId)
                                         .collect(Collectors.toList());
                                 if (selected.size() == correct.size()) {
-                                    correct.removeAll(selected);
+                                    correct.removeAll(selected.stream().map(Integer::valueOf).collect(Collectors.toList()));
                                     if (correct.size() == 0) {
                                         examQuestion.setObtainScore(answer.getScore());
                                     }
@@ -267,21 +266,21 @@ public class ExamService {
 
                                 List<Map<String, Object>> selected = new ArrayList<>((List<Map<String, Object>>) answer.getContent());
                                 int sum;
-                                List<Question.Answer> answers=new ArrayList<>();
+                                List<Question.Answer> answers = new ArrayList<>();
                                 if (answer.getScore() > 0) {
                                     String stem = question.getStem();
 
                                     String rx = "(\\{[^}]+\\})";
 
-                                    int i =0;
+                                    int i = 0;
 
                                     Pattern p = Pattern.compile(rx);
                                     Matcher m = p.matcher(stem);
                                     while (m.find()) {
-                                        Question.Answer a=  new Question.Answer();
+                                        Question.Answer a = new Question.Answer();
                                         a.setId(i);
                                         String s = m.group();
-                                        a.setContent(s.substring(1,s.length()-1));
+                                        a.setContent(s.substring(1, s.length() - 1));
                                         answers.add(a);
                                     }
 
