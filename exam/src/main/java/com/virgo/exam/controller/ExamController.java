@@ -27,7 +27,7 @@ public class ExamController {
 
     @ApiOperation(value = "考试")
     @PostMapping("v1/exam/{id}")
-    public ResultData<?> findPage(@RequestBody @Valid ExamSubmitParam examSaveParam, @PathVariable String id) {
+    public ResultData<?> exam(@RequestBody @Valid ExamSubmitParam examSaveParam, @PathVariable String id) {
         return ResultData.success(examService.exam(id, examSaveParam));
     }
 }
